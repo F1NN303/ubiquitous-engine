@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tug-of-War KI Demo</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <main class="container">
+    <h1>2v2 Tug-of-War – KI-Trainings-Demo</h1>
+    <section class="controls">
+      <div class="buttons">
+        <button id="trainBtn">Train AI</button>
+        <button id="demoBtn">Play Demo Match</button>
+        <label class="input-inline">
+          Episoden:
+          <input type="number" id="episodeInput" min="10" step="50" value="300" />
+        </label>
+      </div>
+      <div class="stats" id="stats"></div>
+    </section>
+
+    <section class="canvas-wrapper">
+      <canvas id="gameCanvas" width="800" height="300"></canvas>
+    </section>
+
+    <section class="info">
+      <h2>Beschreibung</h2>
+      <p>
+        Die vier Figuren werden per tabellenbasiertem Q-Learning trainiert. Der Seilmittlepunkt
+        zeigt an, welches Team gerade die Oberhand hat. Drücke <strong>Train AI</strong>, um mehrere
+        Episoden selbstständig ablaufen zu lassen. Mit <strong>Play Demo Match</strong> spielst du ein
+        einzelnes Match mit den aktuell gelernten Q-Werten. Jede Figur entscheidet pro Schritt zwischen
+        den Aktionen <em>pull</em>, <em>hold</em> und <em>rest</em>.
+      </p>
+    </section>
+  </main>
+  <script src="script.js"></script>
+</body>
+</html>
