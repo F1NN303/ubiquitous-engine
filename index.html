@@ -3,56 +3,55 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Labor-KI Trainings-Minispiel</title>
+  <title>Shadow Arena – Online Learning AI</title>
   <style>
     :root {
       --bg: radial-gradient(circle at 20% 20%, #1f2a44, #0f1222 60%);
-      --card: rgba(255, 255, 255, 0.04);
-      --card-strong: rgba(255, 255, 255, 0.08);
+      --panel: rgba(255, 255, 255, 0.04);
+      --panel-strong: rgba(255, 255, 255, 0.08);
       --text: #e8ecff;
       --muted: #9fb0d1;
       --accent: #7cf0ff;
       --accent-2: #ff9ff3;
       --danger: #ff6b81;
       --safe: #4cd964;
-      --unknown: #feca57;
-      --shadow: 0 10px 40px rgba(0,0,0,0.35);
-      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+      --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+      font-family: "Inter", system-ui, -apple-system, sans-serif;
     }
     * { box-sizing: border-box; }
     body {
       margin: 0;
+      padding: 20px;
       min-height: 100vh;
       color: var(--text);
       background: var(--bg);
-      padding: 20px;
     }
     header {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 16px;
       flex-wrap: wrap;
-      gap: 12px;
       margin-bottom: 16px;
     }
-    h1 { margin: 0; font-size: 1.8rem; letter-spacing: 0.5px; }
-    .tagline { color: var(--muted); max-width: 640px; line-height: 1.4; }
-    .grid {
+    h1 { margin: 0; letter-spacing: 0.6px; font-size: 1.8rem; }
+    .tagline { color: var(--muted); max-width: 720px; line-height: 1.5; }
+    .layout {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      grid-template-columns: 2fr 1fr;
       gap: 16px;
     }
     .card {
-      background: var(--card);
-      border: 1px solid rgba(255,255,255,0.06);
+      background: var(--panel);
+      border: 1px solid rgba(255,255,255,0.07);
       border-radius: 14px;
       padding: 14px 16px;
       box-shadow: var(--shadow);
-      backdrop-filter: blur(8px);
+      backdrop-filter: blur(10px);
     }
-    .card h2 { margin: 0 0 10px; font-size: 1.1rem; letter-spacing: 0.2px; }
-    .card h3 { margin: 6px 0; color: var(--muted); font-weight: 600; font-size: 0.95rem; }
-    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .card h2 { margin: 0 0 8px; font-size: 1.1rem; letter-spacing: 0.3px; }
+    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .col { display: flex; flex-direction: column; gap: 8px; }
     button {
       background: linear-gradient(120deg, #3c4ca0, #6b5edc);
       color: white;
@@ -69,668 +68,590 @@
     button:active { transform: translateY(0); filter: brightness(0.95); }
     button.secondary { background: #2f3645; }
     button.danger { background: linear-gradient(120deg, #ff4d6d, #ff6b81); }
-    button.safe { background: linear-gradient(120deg, #2ecc71, #27ae60); }
-    button.unknown { background: linear-gradient(120deg, #f9c74f, #fca311); color: #1d1c1c; }
-    .pill {
-      padding: 6px 10px;
-      border-radius: 20px;
-      background: var(--card-strong);
-      color: var(--muted);
-      font-size: 0.9rem;
-    }
-    .panel {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
-    .feature-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-    .feature-list li { background: var(--card-strong); padding: 8px 10px; border-radius: 10px; }
-    .label { text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; color: var(--muted); }
-    .value { font-weight: 700; }
-    canvas#sceneCanvas { width: 100%; height: 220px; background: #0e1323; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
-    canvas#chartCanvas { width: 100%; height: 160px; background: #0d101c; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); }
-    .prob-row { display: grid; grid-template-columns: 80px 1fr 60px; gap: 8px; align-items: center; }
-    .bar { height: 10px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
-    .bar span { display: block; height: 100%; border-radius: 10px; }
     .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-    .stat { background: var(--card-strong); padding: 10px; border-radius: 10px; text-align: center; }
-    .stat .value { font-size: 1.2rem; }
-    .weight-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
-    .weight-list li { background: var(--card-strong); padding: 10px; border-radius: 10px; }
-    .weight-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; margin-top: 6px; position: relative; }
-    .weight-bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff6b6b, #6c5ce7); }
-    .badge { display: inline-block; padding: 6px 8px; background: #1c2738; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin: 2px; }
-    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
-    .overlay { padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--muted); font-size: 0.9rem; }
-    .highlight { color: var(--accent); font-weight: 700; }
-    .toast { position: fixed; top: 12px; right: 12px; background: rgba(44, 62, 80, 0.9); color: #fff; padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateY(-15px); transition: all 0.3s ease; }
-    .toast.show { opacity: 1; transform: translateY(0); }
-    .slider-row { display: flex; gap: 12px; align-items: center; }
-    input[type="range"] { width: 140px; accent-color: #7cf0ff; }
-    input[type="checkbox"] { transform: scale(1.1); }
-    @media (max-width: 900px) { .panel { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; } }
+    .stat { background: var(--panel-strong); padding: 10px; border-radius: 10px; text-align: center; }
+    .stat .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.6px; }
+    .stat .value { font-size: 1.2rem; font-weight: 800; }
+    .pill { padding: 6px 10px; border-radius: 20px; background: var(--panel-strong); color: var(--muted); font-weight: 700; letter-spacing: 0.3px; }
+    .badge { display: inline-block; padding: 6px 10px; border-radius: 10px; background: #1c2738; color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
+    .slider-row { display: flex; align-items: center; gap: 10px; }
+    input[type="range"] { width: 160px; accent-color: var(--accent); }
+    canvas#game { width: 100%; height: 420px; background: #0c1120; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 20px rgba(0,0,0,0.4); }
+    canvas#chart { width: 100%; height: 180px; background: #0d101c; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); }
+    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+    .list li { background: var(--panel-strong); padding: 8px 10px; border-radius: 10px; }
+    .bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
+    .bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff6b6b, #6c5ce7); }
+    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; } }
   </style>
 </head>
 <body>
   <header>
     <div>
-      <h1>Labor-KI Trainings-Minispiel</h1>
-      <div class="tagline">Trainiere eine kleine KI, die Gefahren in einem geheimen Labor klassifiziert. Jede Runde generiert Objekte mit zufälligen Merkmalen, eine versteckte Welt-Regel liefert das echte Label, und dein Online-Lerner passt seine Gewichte sofort an.</div>
+      <h1>Shadow Arena – Online lernender KI-Buddy</h1>
+      <div class="tagline">Steuere den Runner mit WASD. Sammle Energie-Orbs, weiche Gefahren aus. Ein KI-Buddy beobachtet dich und lernt per Online-Behavior-Cloning in Echtzeit deine Aktionen nachzuahmen, um dir zu helfen.</div>
     </div>
     <div class="row">
-      <span class="pill" id="levelPill">Level 1 · Basis Features</span>
-      <span class="pill" id="modelPill">Modell: 2-Layer Netz</span>
+      <span class="pill" id="modeLabel">Modus: Beobachten</span>
+      <span class="pill" id="episodeLabel">Episode 1</span>
     </div>
   </header>
 
-  <section class="grid">
-    <div class="card" style="grid-column: span 2;">
-      <h2>Haupt-Szene</h2>
-      <div class="panel">
-        <div>
-          <canvas id="sceneCanvas" width="600" height="220"></canvas>
-          <div class="overlay" id="featureText"></div>
-          <div class="row" style="margin-top: 10px;">
-            <label class="row" style="gap:6px;"><input type="checkbox" id="debugToggle"> Debug-Overlay (Ground Truth)</label>
-            <button class="secondary" id="nextBtn">Nächstes Objekt</button>
-          </div>
+  <section class="layout">
+    <div class="card">
+      <h2>Game-View</h2>
+      <canvas id="game" width="960" height="420"></canvas>
+      <div class="stat-grid" style="margin-top: 10px;">
+        <div class="stat"><div class="label">Player HP</div><div class="value" id="hpStat">100</div></div>
+        <div class="stat"><div class="label">Score</div><div class="value" id="scoreStat">0</div></div>
+        <div class="stat"><div class="label">KI Score</div><div class="value" id="allyStat">0</div></div>
+        <div class="stat"><div class="label">Timer</div><div class="value" id="timeStat">0</div></div>
+      </div>
+    </div>
+
+    <div class="col">
+      <div class="card">
+        <h2>KI-Status</h2>
+        <div class="row">
+          <span class="badge" id="aiDecision">-</span>
+          <span class="badge" id="aiMode">Online-Lernen</span>
+          <span class="badge" id="autoTrainBadge">Auto-Training: an</span>
         </div>
-        <div>
-          <h3>Aktive Features</h3>
-          <ul class="feature-list" id="featureList"></ul>
-          <div class="overlay" id="worldRuleInfo">Geheime Weltregel aktiv – finde sie heraus!</div>
-          <div class="row" style="margin-top:8px;">
-            <button id="resetWorldBtn" class="secondary">Neue Weltregel</button>
-          </div>
+        <div class="stat-grid" style="margin-top:10px;">
+          <div class="stat"><div class="label">Samples</div><div class="value" id="sampleCount">0</div></div>
+          <div class="stat"><div class="label">Updates</div><div class="value" id="updateCount">0</div></div>
+          <div class="stat"><div class="label">Epsilon</div><div class="value" id="epsilonVal">0.1</div></div>
+          <div class="stat"><div class="label">LR</div><div class="value" id="lrVal">0.05</div></div>
         </div>
+        <div class="list" id="featureList"></div>
       </div>
-    </div>
 
-    <div class="card">
-      <h2>AI-Vorhersage</h2>
-      <div id="predictionText" class="value">-</div>
-      <div id="uncertainty" class="label" style="margin:6px 0;">-</div>
-      <div id="probBars"></div>
-    </div>
-
-    <div class="card">
-      <h2>Trainer-Panel</h2>
-      <div class="row">
-        <button class="safe" id="labelSafe">Tatsächlich Sicher</button>
-        <button class="danger" id="labelDanger">Tatsächlich Gefährlich</button>
-        <button class="unknown" id="labelUnknown">Tatsächlich Unbekannt</button>
+      <div class="card">
+        <h2>Lernkurve</h2>
+        <canvas id="chart" width="520" height="180"></canvas>
       </div>
-      <div id="feedback" style="margin-top:10px; color: var(--muted);"></div>
-    </div>
-
-    <div class="card">
-      <h2>Statistik</h2>
-      <div class="stat-grid">
-        <div class="stat"><div class="label">Runden</div><div class="value" id="roundStat">0</div></div>
-        <div class="stat"><div class="label">Accuracy</div><div class="value" id="accStat">0%</div></div>
-        <div class="stat"><div class="label">Level</div><div class="value" id="levelStat">1</div></div>
-        <div class="stat"><div class="label">Trainings-Samples</div><div class="value" id="sampleStat">0</div></div>
-      </div>
-      <div style="margin-top:10px;" id="classStats"></div>
-      <div id="badgeBar" style="margin-top:8px;"></div>
-    </div>
-
-    <div class="card">
-      <h2>Lernkurve</h2>
-      <canvas id="chartCanvas" width="600" height="160"></canvas>
-      <div class="label" id="chartLabel">Verfolge Accuracy und Verlust über Zeit</div>
-    </div>
-
-    <div class="card">
-      <h2>Gewichte & Feature-Importance</h2>
-      <ul class="weight-list" id="weightList"></ul>
-    </div>
-
-    <div class="card" style="grid-column: span 2;">
-      <h2>Kontroll-Panel</h2>
-      <div class="row" style="gap:10px; margin-bottom: 8px;">
-        <button id="resetModelBtn">Modell Reset</button>
-        <button id="autoBtn" class="secondary">Automatikmodus: aus</button>
-        <button id="switchModelBtn" class="secondary">Modell wechseln</button>
-      </div>
-      <div class="slider-row">
-        <span class="label">Learning Rate</span>
-        <input type="range" id="lrSlider" min="0.01" max="0.7" value="0.2" step="0.01">
-        <span class="value" id="lrValue">0.20</span>
-      </div>
-      <div style="margin-top:8px; color: var(--muted);">Tip: Aktiviere Automatikmodus, um die KI mit der geheimen Regel allein trainieren zu lassen. Steuere den Schwierigkeitsgrad über Levels und lerne die Signale kennen.</div>
     </div>
   </section>
 
-  <div id="toast" class="toast"></div>
+  <section class="layout" style="margin-top: 14px; grid-template-columns: 1.2fr 1fr 1fr;">
+    <div class="card">
+      <h2>Modell-Panel</h2>
+      <div class="row" style="justify-content: space-between;">
+        <div class="badge">Features: <span id="featCount">0</span></div>
+        <div class="badge">Aktionen: <span id="actCount">0</span></div>
+      </div>
+      <div class="list" id="weightList" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Kontrollen</h2>
+      <div class="slider-row">
+        <label>Learning Rate</label>
+        <input type="range" id="lrSlider" min="0.01" max="0.5" step="0.01" value="0.05">
+        <span class="badge" id="lrLabel">0.05</span>
+      </div>
+      <div class="slider-row">
+        <label>Exploration ε</label>
+        <input type="range" id="epsSlider" min="0" max="0.6" step="0.02" value="0.10">
+        <span class="badge" id="epsLabel">0.10</span>
+      </div>
+      <div class="col" style="margin-top: 6px;">
+        <button id="resetModel" class="secondary">KI-Model Reset</button>
+        <button id="resetData" class="secondary">Daten zurücksetzen</button>
+        <button id="newRound" class="danger">Neue Runde</button>
+      </div>
+      <p style="color: var(--muted); margin: 6px 0 0; font-size: 0.9rem;">Der KI-Buddy nutzt Behavior-Cloning: jeder Spielerzug wird als (State, Action)-Paar gespeichert und mittels SGD trainiert, um deine Steuerung zu imitieren. Epsilon erzeugt Zufallsaktionen zum Erkunden.</p>
+    </div>
+
+    <div class="card">
+      <h2>Episode/Performance</h2>
+      <div class="list" id="episodeList"></div>
+    </div>
+  </section>
 
   <script>
-    // ------- Feature Definitionen & Level-Struktur -------
-    const featureSpace = {
-      shape: ['Kreis', 'Quadrat', 'Dreieck'],
-      color: ['Rot', 'Blau', 'Grün'],
-      size: ['Klein', 'Mittel', 'Groß'],
-      movement: ['Stehend', 'Langsam', 'Schnell'],
-      energy: ['Niedrig', 'Mittel', 'Hoch'],
-    };
-
-    const classes = ['Sicher', 'Gefährlich', 'Unbekannt'];
-
-    const levels = [
-      { id: 1, name: 'Basis Features', activeFeatures: ['shape', 'color'], roundsToNext: 16 },
-      { id: 2, name: 'Dynamik', activeFeatures: ['shape', 'color', 'size', 'movement'], roundsToNext: 24 },
-      { id: 3, name: 'Volle Komplexität', activeFeatures: Object.keys(featureSpace), roundsToNext: Infinity },
-    ];
-
-    // ------- Utility Helpers -------
-    const randChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
-    const softmax = (arr) => {
-      const max = Math.max(...arr);
-      const exp = arr.map((v) => Math.exp(v - max));
-      const sum = exp.reduce((a, b) => a + b, 0);
-      return exp.map((v) => v / sum);
-    };
-
-    const zeros = (n, m) => Array.from({ length: n }, () => Array(m).fill(0));
-    const randomMatrix = (n, m, scale = 0.2) => Array.from({ length: n }, () => Array.from({ length: m }, () => (Math.random() * 2 - 1) * scale));
-
-    // ------- Welt-Regel -------
-    function createWorldRule(activeFeatures) {
-      const requiredDanger = activeFeatures.map((f) => ({ feature: f, value: randChoice(featureSpace[f]) })).slice(0, 3);
-      const bonusFeature = randChoice(activeFeatures);
-      const bonusDanger = { feature: bonusFeature, value: randChoice(featureSpace[bonusFeature]) };
-      const unknownTriggers = activeFeatures.slice(0, 2).map((f) => ({ feature: f, value: randChoice(featureSpace[f]) }));
-      return { requiredDanger, bonusDanger, unknownTriggers, description: 'Versteckt – jedes Spiel neu.' };
-    }
-
-    function computeGroundTruth(sample, rule, level) {
-      // Danger score erhöht sich, wenn mehrere Bedingungen passen.
-      let dangerScore = 0;
-      rule.requiredDanger.forEach((cond) => { if (sample[cond.feature] === cond.value) dangerScore += 1; });
-      if (sample[rule.bonusDanger.feature] === rule.bonusDanger.value) dangerScore += 1.2;
-
-      // Unbekannt, wenn seltene Kombination aus unknownTriggers getroffen wird.
-      const unknownHit = rule.unknownTriggers.every((c) => sample[c.feature] === c.value);
-
-      if (unknownHit && level.id >= 2) return 'Unbekannt';
-      if (dangerScore >= Math.max(2, level.activeFeatures.length - 1)) return 'Gefährlich';
-      if (dangerScore >= 1.5 && level.id === 3) return 'Gefährlich';
-      return 'Sicher';
-    }
-
-    // ------- Feature-Encoding -------
-    function encodeSample(sample, activeFeatures) {
-      // One-Hot Encoding je Feature-Kategorie.
-      const vector = [];
-      activeFeatures.forEach((feature) => {
-        const values = featureSpace[feature];
-        values.forEach((v) => vector.push(sample[feature] === v ? 1 : 0));
-      });
-      return vector;
-    }
-
-    function featureCount(activeFeatures) {
-      return activeFeatures.reduce((acc, f) => acc + featureSpace[f].length, 0);
-    }
-
-    // ------- Modelle -------
-    class LogisticModel {
-      constructor(inputSize, outputSize) {
-        this.type = 'Logistic';
-        this.init(inputSize, outputSize);
-      }
-      init(inputSize, outputSize) {
-        this.W = randomMatrix(outputSize, inputSize, 0.2);
-        this.b = Array(outputSize).fill(0);
-      }
-      predict(x) {
-        const logits = this.W.map((row, i) => row.reduce((sum, w, idx) => sum + w * x[idx], this.b[i]));
-        return softmax(logits);
-      }
-      train(x, y, lr) {
-        const probs = this.predict(x);
-        const error = probs.map((p, i) => p - (i === y ? 1 : 0));
-        this.W = this.W.map((row, i) => row.map((w, j) => w - lr * error[i] * x[j]));
-        this.b = this.b.map((b, i) => b - lr * error[i]);
-        const loss = -Math.log(Math.max(probs[y], 1e-5));
-        return { loss, probs };
-      }
-    }
-
-    class TwoLayerNet {
-      constructor(inputSize, hidden = 24, outputSize = 3) {
-        this.type = '2-Layer Netz';
-        this.hidden = hidden;
-        this.init(inputSize, hidden, outputSize);
-      }
-      init(input, hidden, output) {
-        this.W1 = randomMatrix(hidden, input, 0.3);
-        this.b1 = Array(hidden).fill(0);
-        this.W2 = randomMatrix(output, hidden, 0.3);
-        this.b2 = Array(output).fill(0);
-      }
-      predict(x) {
-        const hRaw = this.W1.map((row, i) => row.reduce((s, w, idx) => s + w * x[idx], this.b1[i]));
-        const h = hRaw.map((v) => Math.max(0, v)); // ReLU
-        const logits = this.W2.map((row, i) => row.reduce((s, w, idx) => s + w * h[idx], this.b2[i]));
-        const probs = softmax(logits);
-        return { probs, h };
-      }
-      train(x, y, lr) {
-        const { probs, h } = this.predict(x);
-        const dLogits = probs.map((p, i) => p - (i === y ? 1 : 0));
-        // Grad W2, b2
-        const dW2 = this.W2.map((row, i) => row.map((w, j) => dLogits[i] * h[j]));
-        const db2 = dLogits;
-        // Backprop to hidden
-        const dh = h.map((_, j) => this.W2.reduce((sum, row, i) => sum + row[j] * dLogits[i], 0));
-        const dhRaw = dh.map((v, j) => (h[j] > 0 ? v : 0));
-        const dW1 = this.W1.map((row, i) => row.map((w, j) => dhRaw[i] * x[j]));
-        const db1 = dhRaw;
-        // Update
-        this.W2 = this.W2.map((row, i) => row.map((w, j) => w - lr * dW2[i][j]));
-        this.b2 = this.b2.map((b, i) => b - lr * db2[i]);
-        this.W1 = this.W1.map((row, i) => row.map((w, j) => w - lr * dW1[i][j]));
-        this.b1 = this.b1.map((b, i) => b - lr * db1[i]);
-        const loss = -Math.log(Math.max(probs[y], 1e-5));
-        return { loss, probs };
-      }
-    }
-
-    // ------- Game State -------
-    const state = {
-      levelIndex: 0,
-      round: 0,
-      samples: 0,
-      correct: 0,
-      lossHistory: [],
-      accHistory: [],
-      perClass: { Sicher: { total: 0, correct: 0 }, Gefährlich: { total: 0, correct: 0 }, Unbekannt: { total: 0, correct: 0 } },
-      badges: new Set(),
-      auto: null,
-      debug: false,
-    };
-
-    let activeModel;
-    let worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
-    let lastPrediction = null;
-    let currentSample = null;
-
-    // ------- UI References -------
-    const sceneCanvas = document.getElementById('sceneCanvas');
-    const sceneCtx = sceneCanvas.getContext('2d');
-    const chartCanvas = document.getElementById('chartCanvas');
+    // --- Game constants ---
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const chartCanvas = document.getElementById('chart');
     const chartCtx = chartCanvas.getContext('2d');
-    const featureListEl = document.getElementById('featureList');
-    const featureTextEl = document.getElementById('featureText');
-    const predictionTextEl = document.getElementById('predictionText');
-    const uncertaintyEl = document.getElementById('uncertainty');
-    const probBarsEl = document.getElementById('probBars');
-    const feedbackEl = document.getElementById('feedback');
-    const roundStatEl = document.getElementById('roundStat');
-    const accStatEl = document.getElementById('accStat');
-    const levelStatEl = document.getElementById('levelStat');
-    const sampleStatEl = document.getElementById('sampleStat');
-    const classStatsEl = document.getElementById('classStats');
-    const badgeBarEl = document.getElementById('badgeBar');
-    const levelPill = document.getElementById('levelPill');
-    const modelPill = document.getElementById('modelPill');
-    const worldRuleInfo = document.getElementById('worldRuleInfo');
-    const lrSlider = document.getElementById('lrSlider');
-    const lrValue = document.getElementById('lrValue');
-    const toast = document.getElementById('toast');
+    const W = canvas.width; const H = canvas.height;
+    const keys = { w:false, a:false, s:false, d:false };
+    const actions = ['up','down','left','right','idle']; // action space
+
+    // --- Entities ---
+    let player, ally, orbs, enemies, obstacles;
+    let score = 0, allyScore = 0, hp = 100, timer = 60, episode = 1, difficulty = 1;
+    let samples = [], updates = 0, episodeHistory = [];
+    let autoTrain = true;
+    let lastTime = 0, running = true, dt = 0;
+    const maxSamples = 800;
+
+    // --- Model parameters ---
+    let lr = 0.05; // learning rate
+    let epsilon = 0.1; // exploration
+    const inputSize = 10; // dx/dy player->orb/enemy, player velocity, ally relative
+    const hiddenSize = 12;
+    const outputSize = actions.length;
+    let W1, b1, W2, b2;
+
+    // --- DOM refs ---
+    const hpStat = document.getElementById('hpStat');
+    const scoreStat = document.getElementById('scoreStat');
+    const allyStat = document.getElementById('allyStat');
+    const timeStat = document.getElementById('timeStat');
+    const sampleCount = document.getElementById('sampleCount');
+    const updateCount = document.getElementById('updateCount');
+    const epsilonVal = document.getElementById('epsilonVal');
+    const lrVal = document.getElementById('lrVal');
+    const featureList = document.getElementById('featureList');
+    const modeLabel = document.getElementById('modeLabel');
+    const episodeLabel = document.getElementById('episodeLabel');
+    const aiDecision = document.getElementById('aiDecision');
+    const aiMode = document.getElementById('aiMode');
+    const autoTrainBadge = document.getElementById('autoTrainBadge');
+    const featCount = document.getElementById('featCount');
+    const actCount = document.getElementById('actCount');
     const weightList = document.getElementById('weightList');
+    const episodeList = document.getElementById('episodeList');
+    const lrSlider = document.getElementById('lrSlider');
+    const epsSlider = document.getElementById('epsSlider');
+    const lrLabel = document.getElementById('lrLabel');
+    const epsLabel = document.getElementById('epsLabel');
 
-    // ------- Rendering: Szene -------
-    function drawSample(sample, predictedLabel, groundTruth) {
-      sceneCtx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
-      const { color, size, shape, movement, energy } = sample;
-      const palette = { Rot: '#ff6b6b', Blau: '#6cafff', Grün: '#4cd964' };
-      const sizes = { Klein: 28, Mittel: 46, Groß: 70 };
-      const baseSize = sizes[size] || 40;
-      const x = sceneCanvas.width / 2;
-      const y = sceneCanvas.height / 2;
-      const movementShift = movement === 'Schnell' ? Math.sin(Date.now() / 200) * 22 : movement === 'Langsam' ? Math.sin(Date.now() / 400) * 12 : 0;
+    // --- Utility functions ---
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const rand = (a,b)=>Math.random()*(b-a)+a;
+    const sign = v => v>=0?1:-1;
 
-      sceneCtx.save();
-      sceneCtx.translate(x + movementShift, y);
-      sceneCtx.fillStyle = palette[color] || '#fff';
-      sceneCtx.strokeStyle = '#0f0f1f';
-      sceneCtx.lineWidth = 3;
+    function randn(scale=1){ return (Math.random()*2-1)*scale; }
+    function zeros(len){ return new Array(len).fill(0); }
 
-      if (shape === 'Kreis') {
-        sceneCtx.beginPath();
-        sceneCtx.arc(0, 0, baseSize, 0, Math.PI * 2);
-        sceneCtx.fill(); sceneCtx.stroke();
-      } else if (shape === 'Quadrat') {
-        const s = baseSize * 1.4;
-        sceneCtx.beginPath();
-        sceneCtx.rect(-s / 2, -s / 2, s, s);
-        sceneCtx.fill(); sceneCtx.stroke();
+    function initModel(){
+      W1 = Array.from({length: hiddenSize}, ()=> Array.from({length: inputSize}, ()=>randn(0.5)));
+      b1 = Array.from({length: hiddenSize}, ()=>randn(0.1));
+      W2 = Array.from({length: outputSize}, ()=> Array.from({length: hiddenSize}, ()=>randn(0.5)));
+      b2 = Array.from({length: outputSize}, ()=>randn(0.1));
+      updates = 0;
+      updateModelView();
+    }
+
+    // Forward pass: returns logits and cache
+    function forward(state){
+      const h = zeros(hiddenSize);
+      for(let i=0;i<hiddenSize;i++){
+        let sum = b1[i];
+        for(let j=0;j<inputSize;j++) sum += W1[i][j]*state[j];
+        h[i] = Math.max(0, sum); // ReLU
+      }
+      const o = zeros(outputSize);
+      for(let k=0;k<outputSize;k++){
+        let sum = b2[k];
+        for(let i=0;i<hiddenSize;i++) sum += W2[k][i]*h[i];
+        o[k] = sum;
+      }
+      return {h, o};
+    }
+
+    function softmax(logits){
+      const max = Math.max(...logits);
+      const exps = logits.map(v=>Math.exp(v-max));
+      const sum = exps.reduce((a,b)=>a+b,0);
+      return exps.map(v=>v/sum);
+    }
+
+    // Backprop for single sample, cross-entropy
+    function trainStep(state, actionIdx){
+      const {h, o} = forward(state);
+      const probs = softmax(o);
+      const gradLogits = probs.map((p,idx)=> p - (idx===actionIdx?1:0));
+      // dW2, db2
+      for(let k=0;k<outputSize;k++){
+        for(let i=0;i<hiddenSize;i++){
+          W2[k][i] -= lr * gradLogits[k] * h[i];
+        }
+        b2[k] -= lr * gradLogits[k];
+      }
+      const gradH = zeros(hiddenSize);
+      for(let i=0;i<hiddenSize;i++){
+        let sum = 0; for(let k=0;k<outputSize;k++) sum += gradLogits[k]*W2[k][i];
+        gradH[i] = sum * (h[i]>0?1:0);
+      }
+      for(let i=0;i<hiddenSize;i++){
+        for(let j=0;j<inputSize;j++){
+          W1[i][j] -= lr * gradH[i] * state[j];
+        }
+        b1[i] -= lr * gradH[i];
+      }
+      updates++;
+    }
+
+    // --- Game setup ---
+    function initGame(){
+      player = {x: W*0.25, y: H*0.5, r: 12, speed: 160, vx:0, vy:0};
+      ally   = {x: W*0.6, y: H*0.5, r: 10, speed: 150, vx:0, vy:0};
+      score = 0; allyScore = 0; hp = 100; timer = 60;
+      orbs = []; enemies = []; obstacles = [];
+      for(let i=0;i<5;i++) spawnOrb();
+      for(let i=0;i<3;i++) spawnEnemy();
+      createObstacles();
+      modeLabel.textContent = 'Modus: Beobachten & Lernen';
+      episodeLabel.textContent = `Episode ${episode}`;
+      updateHUD();
+      featureList.innerHTML = renderFeatures();
+      running = true;
+    }
+
+    function createObstacles(){
+      obstacles = [
+        {x: W*0.3, y: H*0.2, w: 120, h: 18},
+        {x: W*0.55, y: H*0.7, w: 160, h: 20},
+        {x: W*0.15, y: H*0.6, w: 100, h: 20},
+      ];
+    }
+
+    function spawnOrb(){
+      orbs.push({x: rand(40, W-40), y: rand(40, H-40), r: 8});
+    }
+
+    function spawnEnemy(){
+      enemies.push({x: rand(60, W-60), y: rand(60, H-60), r: 12, speed: 90 + difficulty*10, dir: Math.random()*Math.PI*2});
+    }
+
+    // --- Input ---
+    window.addEventListener('keydown', e=>{ if(['w','a','s','d'].includes(e.key)) keys[e.key]=true; });
+    window.addEventListener('keyup', e=>{ if(['w','a','s','d'].includes(e.key)) keys[e.key]=false; });
+
+    // --- State vector for agent ---
+    // [dx_to_player, dy_to_player, dx_to_orb, dy_to_orb, dx_to_enemy, dy_to_enemy, ally_vx, ally_vy, player_vx, player_vy]
+    function getState(){
+      const nearestOrb = orbs.reduce((best,o)=>{
+        const d = (o.x-ally.x)**2 + (o.y-ally.y)**2; return d < best.dist? {obj:o, dist:d}: best; 
+      }, {obj:null, dist: Infinity}).obj || {x:ally.x, y:ally.y};
+      const nearestEnemy = enemies.reduce((best,en)=>{
+        const d = (en.x-ally.x)**2 + (en.y-ally.y)**2; return d < best.dist? {obj:en, dist:d}: best; 
+      }, {obj:null, dist: Infinity}).obj || {x:ally.x, y:ally.y};
+      const state = [
+        (player.x - ally.x)/W,
+        (player.y - ally.y)/H,
+        (nearestOrb.x - ally.x)/W,
+        (nearestOrb.y - ally.y)/H,
+        (nearestEnemy.x - ally.x)/W,
+        (nearestEnemy.y - ally.y)/H,
+        ally.vx/ally.speed,
+        ally.vy/ally.speed,
+        player.vx/player.speed,
+        player.vy/player.speed
+      ];
+      return state;
+    }
+
+    function playerAction(){
+      let ax=0, ay=0;
+      if(keys.w) ay -= 1;
+      if(keys.s) ay += 1;
+      if(keys.a) ax -= 1;
+      if(keys.d) ax += 1;
+      const len = Math.hypot(ax,ay)||1;
+      ax/=len; ay/=len;
+      player.vx = ax * player.speed; player.vy = ay * player.speed;
+      player.x = clamp(player.x + player.vx*dt, player.r, W-player.r);
+      player.y = clamp(player.y + player.vy*dt, player.r, H-player.r);
+      collideObstacles(player);
+      // return chosen action index for training
+      let idx = 4; // idle
+      if(ax||ay){
+        if(Math.abs(ax)>Math.abs(ay)) idx = ax>0?3:2; // right/left
+        else idx = ay>0?1:0; // down/up
+      }
+      return idx;
+    }
+
+    function collideObstacles(obj){
+      obstacles.forEach(o=>{
+        if(obj.x+obj.r>o.x && obj.x-obj.r<o.x+o.w && obj.y+obj.r>o.y && obj.y-obj.r<o.y+o.h){
+          // push back
+          const left = obj.x - o.x; const right = (o.x+o.w) - obj.x; const top = obj.y - o.y; const bottom = (o.y+o.h) - obj.y;
+          const minPen = Math.min(left, right, top, bottom);
+          if(minPen===left) obj.x = o.x - obj.r;
+          else if(minPen===right) obj.x = o.x + o.w + obj.r;
+          else if(minPen===top) obj.y = o.y - obj.r;
+          else obj.y = o.y + o.h + obj.r;
+        }
+      });
+    }
+
+    function allyStep(){
+      const state = getState();
+      let actionIdx;
+      if(Math.random() < epsilon){
+        actionIdx = Math.floor(Math.random()*actions.length);
+        aiMode.textContent = 'Exploration';
       } else {
-        const s = baseSize * 1.6;
-        sceneCtx.beginPath();
-        sceneCtx.moveTo(0, -s / 1.6);
-        sceneCtx.lineTo(-s / 2, s / 2);
-        sceneCtx.lineTo(s / 2, s / 2);
-        sceneCtx.closePath();
-        sceneCtx.fill(); sceneCtx.stroke();
+        aiMode.textContent = 'Exploitation';
+        const {o} = forward(state);
+        const probs = softmax(o);
+        actionIdx = probs.indexOf(Math.max(...probs));
       }
-
-      // Energie-Aura
-      const glow = energy === 'Hoch' ? 0.7 : energy === 'Mittel' ? 0.45 : 0.25;
-      const gradient = sceneCtx.createRadialGradient(0, 0, baseSize * 0.4, 0, 0, baseSize * 2);
-      gradient.addColorStop(0, 'rgba(255,255,255,0.05)');
-      gradient.addColorStop(1, `rgba(255,255,255,${glow})`);
-      sceneCtx.fillStyle = gradient;
-      sceneCtx.globalCompositeOperation = 'lighter';
-      sceneCtx.beginPath(); sceneCtx.arc(0, 0, baseSize * 2, 0, Math.PI * 2); sceneCtx.fill();
-      sceneCtx.globalCompositeOperation = 'source-over';
-
-      // Debug Hinweis
-      if (state.debug) {
-        sceneCtx.font = '14px system-ui';
-        sceneCtx.fillStyle = groundTruth === 'Gefährlich' ? 'rgba(255,107,129,0.8)' : groundTruth === 'Unbekannt' ? 'rgba(254,202,87,0.8)' : 'rgba(76,217,100,0.8)';
-        sceneCtx.fillText(`Ground Truth: ${groundTruth}`, -90, -baseSize - 18);
-      }
-      sceneCtx.restore();
-
-      featureTextEl.innerHTML = `Form: <span class="highlight">${shape}</span> · Farbe: <span class="highlight">${color}</span> · Größe: <span class="highlight">${size}</span> · Bewegung: <span class="highlight">${movement}</span> · Energie: <span class="highlight">${energy}</span>`;
+      applyAction(ally, actionIdx);
+      aiDecision.textContent = `KI möchte: ${actions[actionIdx]}`;
+      return {state, actionIdx};
     }
 
-    // ------- Rendering: Vorhersage -------
-    function renderPrediction(probs) {
-      probBarsEl.innerHTML = '';
-      classes.forEach((cls, idx) => {
-        const row = document.createElement('div');
-        row.className = 'prob-row';
-        const name = document.createElement('span');
-        name.textContent = cls;
-        const bar = document.createElement('div');
-        bar.className = 'bar';
-        const fill = document.createElement('span');
-        const color = cls === 'Gefährlich' ? 'linear-gradient(90deg, #ff4d6d, #ff9f43)' : cls === 'Sicher' ? 'linear-gradient(90deg, #2ecc71, #1dd1a1)' : 'linear-gradient(90deg, #f9c74f, #fca311)';
-        fill.style.background = color;
-        fill.style.width = `${(probs[idx] * 100).toFixed(1)}%`;
-        bar.appendChild(fill);
-        const value = document.createElement('span');
-        value.textContent = `${(probs[idx] * 100).toFixed(1)}%`;
-        row.appendChild(name); row.appendChild(bar); row.appendChild(value);
-        probBarsEl.appendChild(row);
+    function applyAction(entity, actionIdx){
+      const dirs = {
+        'up': [0,-1], 'down':[0,1], 'left':[-1,0], 'right':[1,0], 'idle':[0,0]
+      };
+      const [ax, ay] = dirs[actions[actionIdx]];
+      const len = Math.hypot(ax, ay)||1;
+      entity.vx = ax/len * entity.speed;
+      entity.vy = ay/len * entity.speed;
+      entity.x = clamp(entity.x + entity.vx*dt, entity.r, W-entity.r);
+      entity.y = clamp(entity.y + entity.vy*dt, entity.r, H-entity.r);
+      collideObstacles(entity);
+    }
+
+    function updateEnemies(){
+      enemies.forEach(en=>{
+        en.x += Math.cos(en.dir)*en.speed*dt;
+        en.y += Math.sin(en.dir)*en.speed*dt;
+        if(en.x<en.r||en.x>W-en.r) en.dir = Math.PI - en.dir;
+        if(en.y<en.r||en.y>H-en.r) en.dir = -en.dir;
+        collideObstacles(en);
       });
     }
 
-    // ------- Rendering: Statistik -------
-    function renderStats() {
-      roundStatEl.textContent = state.round;
-      sampleStatEl.textContent = state.samples;
-      const acc = state.samples ? (state.correct / state.samples) * 100 : 0;
-      accStatEl.textContent = `${acc.toFixed(1)}%`;
-      levelStatEl.textContent = levels[state.levelIndex].id;
-      const perClassText = Object.entries(state.perClass).map(([k, v]) => {
-        const a = v.total ? ((v.correct / v.total) * 100).toFixed(1) : '0.0';
-        return `<div>${k}: ${a}% (${v.correct}/${v.total})</div>`;
-      }).join('');
-      classStatsEl.innerHTML = perClassText;
-      renderBadges(acc);
-    }
-
-    function renderBadges(acc) {
-      badgeBarEl.innerHTML = '';
-      if (acc >= 30) state.badges.add('Bronze Lerner');
-      if (acc >= 60 && state.samples > 20) state.badges.add('Silberne Präzision');
-      if (acc >= 80 && state.samples > 40) state.badges.add('Goldener Forscher');
-      state.badges.forEach((b) => {
-        const span = document.createElement('span');
-        span.className = 'badge';
-        span.textContent = b;
-        badgeBarEl.appendChild(span);
+    function handleCollisions(){
+      // player collect orbs
+      orbs = orbs.filter(o=>{
+        const dP = Math.hypot(o.x-player.x, o.y-player.y);
+        const dA = Math.hypot(o.x-ally.x, o.y-ally.y);
+        if(dP < player.r + o.r){ score += 10; spawnOrb(); return false; }
+        if(dA < ally.r + o.r){ allyScore += 6; spawnOrb(); return false; }
+        return true;
+      });
+      // enemies damage player
+      enemies.forEach(en=>{
+        const dP = Math.hypot(en.x-player.x, en.y-player.y);
+        if(dP < en.r + player.r){ hp = Math.max(0, hp-20*dt); }
+        const dA = Math.hypot(en.x-ally.x, en.y-ally.y);
+        if(dA < en.r + ally.r){ en.dir += Math.PI/2; }
       });
     }
 
-    // ------- Rendering: Lernkurve -------
-    function drawChart() {
+    function updateHUD(){
+      hpStat.textContent = hp.toFixed(0);
+      scoreStat.textContent = score.toFixed(0);
+      allyStat.textContent = allyScore.toFixed(0);
+      timeStat.textContent = timer.toFixed(1);
+      sampleCount.textContent = samples.length;
+      updateCount.textContent = updates;
+      epsilonVal.textContent = epsilon.toFixed(2);
+      lrVal.textContent = lr.toFixed(2);
+      autoTrainBadge.textContent = `Auto-Training: ${autoTrain?'an':'aus'}`;
+    }
+
+    function render(){
+      ctx.clearRect(0,0,W,H);
+      // background grid
+      ctx.fillStyle = '#0c1120';
+      ctx.fillRect(0,0,W,H);
+      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+      ctx.lineWidth = 1;
+      for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
+      for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
+
+      // obstacles
+      obstacles.forEach(o=>{
+        ctx.fillStyle = 'rgba(255,255,255,0.05)';
+        ctx.fillRect(o.x, o.y, o.w, o.h);
+        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
+        ctx.strokeRect(o.x, o.y, o.w, o.h);
+      });
+
+      // orbs
+      orbs.forEach(o=>{
+        ctx.beginPath();
+        const grad = ctx.createRadialGradient(o.x, o.y, 2, o.x, o.y, 10);
+        grad.addColorStop(0, '#7cf0ff');
+        grad.addColorStop(1, '#2f9ecb');
+        ctx.fillStyle = grad;
+        ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
+        ctx.fill();
+      });
+
+      // enemies
+      enemies.forEach(en=>{
+        ctx.beginPath();
+        const grad = ctx.createRadialGradient(en.x, en.y, 2, en.x, en.y, 14);
+        grad.addColorStop(0, '#ff6b6b');
+        grad.addColorStop(1, '#c0392b');
+        ctx.fillStyle = grad;
+        ctx.arc(en.x,en.y,en.r,0,Math.PI*2);
+        ctx.fill();
+        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
+        ctx.stroke();
+      });
+
+      // ally trail
+      ctx.strokeStyle = 'rgba(124, 240, 255, 0.5)';
+      ctx.lineWidth = 2;
+      ctx.beginPath();
+      ctx.arc(ally.x, ally.y, ally.r+6, 0, Math.PI*2);
+      ctx.stroke();
+
+      // ally
+      ctx.beginPath();
+      ctx.fillStyle = '#7cf0ff';
+      ctx.arc(ally.x, ally.y, ally.r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#0c1120';
+      ctx.fillRect(ally.x-2, ally.y-6, 4, 3);
+
+      // player
+      ctx.beginPath();
+      ctx.fillStyle = '#feca57';
+      ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
+      ctx.fillStyle = '#0c1120';
+      ctx.fillRect(player.x-2, player.y-6, 4, 3);
+
+      // UI overlay text
+      ctx.fillStyle = 'rgba(255,255,255,0.7)';
+      ctx.font = '12px Inter';
+      ctx.fillText('WASD bewegen · Sammle Blau, meide Rot · KI lernt dein Verhalten', 12, 16);
+    }
+
+    // --- Chart ---
+    function drawChart(){
       chartCtx.clearRect(0,0,chartCanvas.width, chartCanvas.height);
-      const margin = 20;
-      const w = chartCanvas.width - margin * 2;
-      const h = chartCanvas.height - margin * 2;
+      chartCtx.fillStyle = '#0d101c';
+      chartCtx.fillRect(0,0,chartCanvas.width, chartCanvas.height);
       chartCtx.strokeStyle = 'rgba(255,255,255,0.1)';
-      chartCtx.beginPath();
-      chartCtx.moveTo(margin, margin);
-      chartCtx.lineTo(margin, margin + h);
-      chartCtx.lineTo(margin + w, margin + h);
-      chartCtx.stroke();
-
-      const accData = state.accHistory.slice(-60);
-      const lossData = state.lossHistory.slice(-60);
-      if (!accData.length) return;
-      const maxX = accData.length - 1;
-      const mapX = (i) => margin + (i / Math.max(1, maxX)) * w;
-      const mapY = (v) => margin + h - v * h;
-
+      for(let x=0;x<chartCanvas.width;x+=40){ chartCtx.beginPath(); chartCtx.moveTo(x,0); chartCtx.lineTo(x,chartCanvas.height); chartCtx.stroke(); }
+      for(let y=0;y<chartCanvas.height;y+=40){ chartCtx.beginPath(); chartCtx.moveTo(0,y); chartCtx.lineTo(chartCanvas.width,y); chartCtx.stroke(); }
+      if(episodeHistory.length<2) return;
+      const maxReward = Math.max(...episodeHistory.map(e=>e.reward), 1);
       chartCtx.strokeStyle = '#7cf0ff';
+      chartCtx.lineWidth = 2;
       chartCtx.beginPath();
-      accData.forEach((v, i) => {
-        const x = mapX(i);
-        const y = mapY(Math.min(1, v));
-        i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
+      episodeHistory.forEach((ep,idx)=>{
+        const x = (idx/(episodeHistory.length-1)) * (chartCanvas.width-20) + 10;
+        const y = chartCanvas.height - (ep.reward/maxReward)*(chartCanvas.height-20) - 10;
+        if(idx===0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
       });
       chartCtx.stroke();
-
-      if (lossData.length) {
-        const maxLoss = Math.max(...lossData, 1);
-        chartCtx.strokeStyle = '#ff9f43';
-        chartCtx.beginPath();
-        lossData.forEach((v, i) => {
-          const x = mapX(i);
-          const y = margin + h - (v / maxLoss) * h;
-          i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
-        });
-        chartCtx.stroke();
-      }
-    }
-
-    // ------- Rendering: Gewichte -------
-    function updateWeightView() {
-      weightList.innerHTML = '';
-      const activeFeatures = levels[state.levelIndex].activeFeatures;
-      const inputSize = featureCount(activeFeatures);
-      const weightPerInput = new Array(inputSize).fill(0);
-
-      if (activeModel instanceof LogisticModel) {
-        activeModel.W.forEach((row) => row.forEach((w, i) => weightPerInput[i] += w));
-      } else {
-        activeModel.W1.forEach((row, h) => row.forEach((w, i) => weightPerInput[i] += Math.abs(w)));
-      }
-
-      let idx = 0;
-      activeFeatures.forEach((f) => {
-        const values = featureSpace[f];
-        const li = document.createElement('li');
-        const header = document.createElement('div');
-        header.innerHTML = `<strong>${f}</strong>`;
-        li.appendChild(header);
-        values.forEach((v) => {
-          const magnitude = Math.min(1, Math.abs(weightPerInput[idx]));
-          const bar = document.createElement('div');
-          bar.className = 'weight-bar';
-          const span = document.createElement('span');
-          span.style.width = `${(magnitude * 100).toFixed(1)}%`;
-          bar.appendChild(span);
-          const row = document.createElement('div');
-          row.className = 'flex-between';
-          row.innerHTML = `<span class="label">${v}</span><span class="value">${weightPerInput[idx].toFixed(2)}</span>`;
-          li.appendChild(row);
-          li.appendChild(bar);
-          idx += 1;
-        });
-        weightList.appendChild(li);
+      chartCtx.fillStyle = '#7cf0ff';
+      episodeHistory.forEach((ep,idx)=>{
+        const x = (idx/(episodeHistory.length-1)) * (chartCanvas.width-20) + 10;
+        const y = chartCanvas.height - (ep.reward/maxReward)*(chartCanvas.height-20) - 10;
+        chartCtx.beginPath(); chartCtx.arc(x,y,3,0,Math.PI*2); chartCtx.fill();
       });
     }
 
-    // ------- Badge & Level Handling -------
-    function maybeLevelUp(acc) {
-      const level = levels[state.levelIndex];
-      if (state.round >= level.roundsToNext && state.levelIndex < levels.length - 1 && acc > 0.55) {
-        state.levelIndex += 1;
-        worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
-        initModel();
-        showToast('Die KI hat ein Upgrade erhalten! Neue Features aktiv.');
-        refreshFeatureList();
-        updateUI();
+    function renderEpisodes(){
+      episodeList.innerHTML = episodeHistory.slice(-6).map(ep=>
+        `<li>Ep ${ep.id}: Reward ${ep.reward.toFixed(1)} · Player ${ep.playerScore} · KI ${ep.allyScore}</li>`
+      ).join('');
+    }
+
+    // --- Training loop ---
+    function recordSample(state, actionIdx){
+      if(samples.length > maxSamples) samples.shift();
+      samples.push({state, actionIdx});
+      // sofortiges Online-Update, damit die KI ohne Button-Eingriff automatisch lernt
+      if(autoTrain){
+        trainStep(state, actionIdx);
+        if(updates % 4 === 0) updateModelView();
       }
     }
 
-    // ------- Sample Generierung -------
-    function generateSample() {
-      const activeFeatures = levels[state.levelIndex].activeFeatures;
-      const sample = {};
-      activeFeatures.forEach((f) => { sample[f] = randChoice(featureSpace[f]); });
-      // inaktive Features auffüllen für UI
-      Object.keys(featureSpace).forEach((f) => { if (!sample[f]) sample[f] = randChoice(featureSpace[f]); });
-      return sample;
+    function trainMiniBatch(batchSize=12){
+      if(samples.length===0) return;
+      for(let i=0;i<batchSize;i++){
+        const sample = samples[Math.floor(Math.random()*samples.length)];
+        trainStep(sample.state, sample.actionIdx);
+      }
+      updateModelView();
     }
 
-    // ------- Training & Vorhersage -------
-    function predictAndRender(sample) {
-      const vector = encodeSample(sample, levels[state.levelIndex].activeFeatures);
-      const res = activeModel.predict(vector);
-      const probs = res.probs || res;
-      const bestIdx = probs.indexOf(Math.max(...probs));
-      const bestClass = classes[bestIdx];
-      lastPrediction = { probs, bestClass, vector };
-      predictionTextEl.textContent = `KI glaubt: ${bestClass}`;
-      const confidence = (probs[bestIdx] * 100).toFixed(1);
-      const warning = probs[bestIdx] < 0.6 ? 'Unsicher' : 'Stabil';
-      uncertaintyEl.textContent = `Confidence ${confidence}% · ${warning}`;
-      renderPrediction(probs);
-      drawSample(sample, bestClass, computeGroundTruth(sample, worldRule, levels[state.levelIndex]));
+    function updateModelView(){
+      featCount.textContent = inputSize;
+      actCount.textContent = outputSize;
+      // visualize first hidden neuron weights
+      const names = [
+        'ally->player dx','ally->player dy','ally->orb dx','ally->orb dy','ally->enemy dx','ally->enemy dy','ally vx','ally vy','player vx','player vy'
+      ];
+      weightList.innerHTML = names.map((name, idx)=>{
+        const avg = W1.reduce((a,row)=>a+row[idx],0)/hiddenSize;
+        const width = clamp((avg+1)/2, 0, 1)*100;
+        const color = avg>0? 'linear-gradient(90deg,#7cf0ff,#6c5ce7)':'linear-gradient(90deg,#ff9ff3,#ff6b81)';
+        return `<li><div class="row" style="justify-content: space-between;"><span>${name}</span><span>${avg.toFixed(2)}</span></div><div class="bar"><span style="width:${width}%; background:${color}"></span></div></li>`;
+      }).join('');
     }
 
-    function trainOnLabel(label) {
-      if (!lastPrediction) return;
-      const y = classes.indexOf(label);
-      const lr = parseFloat(lrSlider.value);
-      const { loss, probs } = activeModel.train(lastPrediction.vector, y, lr);
-      const bestIdx = lastPrediction.probs.indexOf(Math.max(...lastPrediction.probs));
-      const predicted = classes[bestIdx];
-      const correct = predicted === label;
-      state.samples += 1;
-      if (correct) state.correct += 1;
-      state.perClass[label].total += 1;
-      if (correct) state.perClass[label].correct += 1;
-      state.lossHistory.push(loss);
-      const acc = state.correct / state.samples;
-      state.accHistory.push(acc);
-      feedbackEl.innerHTML = `Letzte Runde: KI sagte <strong>${predicted}</strong> (${(lastPrediction.probs[bestIdx]*100).toFixed(1)}%), richtig war <strong>${label}</strong>.`;
-      updateUI();
-      maybeLevelUp(acc);
+    function renderFeatures(){
+      return `
+        <li>State: [ally→player Δx/Δy, ally→orb Δx/Δy, ally→enemy Δx/Δy, ally vx/vy, player vx/vy]</li>
+        <li>Aktionen: ${actions.join(', ')}</li>
+        <li>Training: Cross-Entropy, ReLU Hidden ${hiddenSize}, Lernrate anpassbar</li>
+        <li>Online-Update: jede Sekunde Mini-Batch & Sofort-Update bei jedem Spielerzug</li>
+      `;
     }
 
-    // ------- UI Updates -------
-    function refreshFeatureList() {
-      const active = levels[state.levelIndex].activeFeatures;
-      featureListEl.innerHTML = '';
-      active.forEach((f) => {
-        const li = document.createElement('li');
-        li.innerHTML = `<div class="label">${f}</div><div class="value">${featureSpace[f].join(', ')}</div>`;
-        featureListEl.appendChild(li);
-      });
-      levelPill.textContent = `Level ${levels[state.levelIndex].id} · ${levels[state.levelIndex].name}`;
-    }
-
-    function updateUI() {
-      renderStats();
+    // --- Episode management ---
+    function endEpisode(){
+      running = false;
+      const reward = allyScore - (100-hp)*0.2 + score*0.2;
+      episodeHistory.push({id: episode, reward, playerScore: score, allyScore});
       drawChart();
-      updateWeightView();
-      lrValue.textContent = parseFloat(lrSlider.value).toFixed(2);
-      modelPill.textContent = `Modell: ${activeModel.type}`;
+      renderEpisodes();
+      difficulty += 0.3;
+      episode++;
+      modeLabel.textContent = 'Episode beendet';
+      setTimeout(()=>{ resetEpisode(); }, 800);
     }
 
-    function showToast(text) {
-      toast.textContent = text;
-      toast.classList.add('show');
-      setTimeout(() => toast.classList.remove('show'), 2200);
+    function resetEpisode(){
+      initGame();
+      running = true;
     }
 
-    // ------- Kontrolle -------
-    function resetModel() {
-      initModel();
-      state.round = 0; state.samples = 0; state.correct = 0; state.lossHistory = []; state.accHistory = [];
-      state.perClass = { Sicher: { total: 0, correct: 0 }, Gefährlich: { total: 0, correct: 0 }, Unbekannt: { total: 0, correct: 0 } };
-      state.badges.clear();
-      showToast('Modell zurückgesetzt. Gewichte neu initialisiert.');
-      updateUI();
-    }
+    // --- Controls ---
+    document.getElementById('resetModel').onclick = ()=>{ initModel(); };
+    document.getElementById('resetData').onclick = ()=>{ samples=[]; updates=0; episodeHistory=[]; drawChart(); renderEpisodes(); updateHUD(); };
+    document.getElementById('newRound').onclick = ()=>{ endEpisode(); };
+    lrSlider.oninput = ()=>{ lr = parseFloat(lrSlider.value); lrLabel.textContent = lr.toFixed(2); lrVal.textContent = lr.toFixed(2); };
+    epsSlider.oninput = ()=>{ epsilon = parseFloat(epsSlider.value); epsLabel.textContent = epsilon.toFixed(2); epsilonVal.textContent = epsilon.toFixed(2); };
 
-    function resetWorldRule() {
-      worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
-      showToast('Neue geheime Weltregel generiert.');
-    }
-
-    function toggleAuto() {
-      if (state.auto) {
-        clearInterval(state.auto);
-        state.auto = null;
-        document.getElementById('autoBtn').textContent = 'Automatikmodus: aus';
-      } else {
-        state.auto = setInterval(() => {
-          runRound(true);
-        }, 600);
-        document.getElementById('autoBtn').textContent = 'Automatikmodus: an';
+    // --- Main loop ---
+    let trainAccumulator = 0;
+    function loop(ts){
+      if(!lastTime) lastTime = ts;
+      dt = (ts-lastTime)/1000;
+      lastTime = ts;
+      if(running){
+        timer -= dt; if(timer<=0 || hp<=0) endEpisode();
+        const playerAct = playerAction();
+        const {state, actionIdx} = allyStep();
+        recordSample(state, playerAct); // target is player action for imitation
+        updateEnemies();
+        handleCollisions();
+        updateHUD();
+        trainAccumulator += dt;
+        if(trainAccumulator > 1){ // once per second run minibatch
+          trainMiniBatch();
+          trainAccumulator = 0;
+        }
+        aiDecision.textContent += ` | Spieler: ${actions[playerAct]}`;
       }
+      render();
+      requestAnimationFrame(loop);
     }
 
-    function switchModel() {
-      const wasLog = activeModel instanceof LogisticModel;
-      const activeFeatures = levels[state.levelIndex].activeFeatures;
-      const inputSize = featureCount(activeFeatures);
-      activeModel = wasLog ? new TwoLayerNet(inputSize, 24, classes.length) : new LogisticModel(inputSize, classes.length);
-      modelPill.textContent = `Modell: ${activeModel.type}`;
-      showToast(`Wechsel zu ${activeModel.type}`);
-      updateUI();
-    }
-
-    // ------- Rundensteuerung -------
-    function runRound(auto = false) {
-      state.round += 1;
-      currentSample = generateSample();
-      const truth = computeGroundTruth(currentSample, worldRule, levels[state.levelIndex]);
-      predictAndRender(currentSample);
-      worldRuleInfo.textContent = auto ? 'Automatik lernt mit Ground Truth' : 'Geheime Weltregel aktiv – trainiere die KI!';
-      if (auto) trainOnLabel(truth);
-    }
-
-    // ------- Initialisierung -------
-    function initModel() {
-      const activeFeatures = levels[state.levelIndex].activeFeatures;
-      const inputSize = featureCount(activeFeatures);
-      activeModel = new TwoLayerNet(inputSize, 24, classes.length);
-      refreshFeatureList();
-    }
-
-    function bindEvents() {
-      document.getElementById('labelSafe').onclick = () => trainOnLabel('Sicher');
-      document.getElementById('labelDanger').onclick = () => trainOnLabel('Gefährlich');
-      document.getElementById('labelUnknown').onclick = () => trainOnLabel('Unbekannt');
-      document.getElementById('nextBtn').onclick = () => runRound(false);
-      document.getElementById('resetModelBtn').onclick = resetModel;
-      document.getElementById('resetWorldBtn').onclick = () => { resetWorldRule(); runRound(false); };
-      document.getElementById('autoBtn').onclick = toggleAuto;
-      document.getElementById('switchModelBtn').onclick = switchModel;
-      document.getElementById('debugToggle').onchange = (e) => { state.debug = e.target.checked; drawSample(currentSample || generateSample(), 'Sicher', 'Sicher'); };
-      lrSlider.oninput = () => { lrValue.textContent = parseFloat(lrSlider.value).toFixed(2); };
-    }
-
-    function bootstrap() {
-      initModel();
-      bindEvents();
-      updateUI();
-      runRound(false);
-      setInterval(() => { if (!state.auto) predictAndRender(currentSample); }, 300); // für Bewegung/Animation
-    }
-
-    bootstrap();
+    // --- Start ---
+    initModel();
+    initGame();
+    updateModelView();
+    requestAnimationFrame(loop);
   </script>
 </body>
 </html>
