@@ -1,41 +1,736 @@
 <!DOCTYPE html>
 <html lang="de">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Tug-of-War KI Demo</title>
-  <link rel="stylesheet" href="style.css" />
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Labor-KI Trainings-Minispiel</title>
+  <style>
+    :root {
+      --bg: radial-gradient(circle at 20% 20%, #1f2a44, #0f1222 60%);
+      --card: rgba(255, 255, 255, 0.04);
+      --card-strong: rgba(255, 255, 255, 0.08);
+      --text: #e8ecff;
+      --muted: #9fb0d1;
+      --accent: #7cf0ff;
+      --accent-2: #ff9ff3;
+      --danger: #ff6b81;
+      --safe: #4cd964;
+      --unknown: #feca57;
+      --shadow: 0 10px 40px rgba(0,0,0,0.35);
+      font-family: system-ui, -apple-system, Segoe UI, sans-serif;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: var(--bg);
+      padding: 20px;
+    }
+    header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    h1 { margin: 0; font-size: 1.8rem; letter-spacing: 0.5px; }
+    .tagline { color: var(--muted); max-width: 640px; line-height: 1.4; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid rgba(255,255,255,0.06);
+      border-radius: 14px;
+      padding: 14px 16px;
+      box-shadow: var(--shadow);
+      backdrop-filter: blur(8px);
+    }
+    .card h2 { margin: 0 0 10px; font-size: 1.1rem; letter-spacing: 0.2px; }
+    .card h3 { margin: 6px 0; color: var(--muted); font-weight: 600; font-size: 0.95rem; }
+    .row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    button {
+      background: linear-gradient(120deg, #3c4ca0, #6b5edc);
+      color: white;
+      border: none;
+      border-radius: 12px;
+      padding: 10px 14px;
+      font-weight: 700;
+      letter-spacing: 0.3px;
+      cursor: pointer;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.2s;
+      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+    }
+    button:hover { transform: translateY(-2px); filter: brightness(1.05); }
+    button:active { transform: translateY(0); filter: brightness(0.95); }
+    button.secondary { background: #2f3645; }
+    button.danger { background: linear-gradient(120deg, #ff4d6d, #ff6b81); }
+    button.safe { background: linear-gradient(120deg, #2ecc71, #27ae60); }
+    button.unknown { background: linear-gradient(120deg, #f9c74f, #fca311); color: #1d1c1c; }
+    .pill {
+      padding: 6px 10px;
+      border-radius: 20px;
+      background: var(--card-strong);
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+    .panel {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    .feature-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
+    .feature-list li { background: var(--card-strong); padding: 8px 10px; border-radius: 10px; }
+    .label { text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.5px; color: var(--muted); }
+    .value { font-weight: 700; }
+    canvas#sceneCanvas { width: 100%; height: 220px; background: #0e1323; border-radius: 12px; border: 1px solid rgba(255,255,255,0.08); }
+    canvas#chartCanvas { width: 100%; height: 160px; background: #0d101c; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); }
+    .prob-row { display: grid; grid-template-columns: 80px 1fr 60px; gap: 8px; align-items: center; }
+    .bar { height: 10px; background: rgba(255,255,255,0.07); border-radius: 10px; overflow: hidden; }
+    .bar span { display: block; height: 100%; border-radius: 10px; }
+    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
+    .stat { background: var(--card-strong); padding: 10px; border-radius: 10px; text-align: center; }
+    .stat .value { font-size: 1.2rem; }
+    .weight-list { list-style: none; padding: 0; margin: 0; display: grid; gap: 8px; }
+    .weight-list li { background: var(--card-strong); padding: 10px; border-radius: 10px; }
+    .weight-bar { height: 8px; background: rgba(255,255,255,0.1); border-radius: 8px; overflow: hidden; margin-top: 6px; position: relative; }
+    .weight-bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff6b6b, #6c5ce7); }
+    .badge { display: inline-block; padding: 6px 8px; background: #1c2738; border-radius: 8px; border: 1px solid rgba(255,255,255,0.08); margin: 2px; }
+    .flex-between { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .overlay { padding: 8px 10px; border-radius: 10px; background: rgba(255,255,255,0.05); color: var(--muted); font-size: 0.9rem; }
+    .highlight { color: var(--accent); font-weight: 700; }
+    .toast { position: fixed; top: 12px; right: 12px; background: rgba(44, 62, 80, 0.9); color: #fff; padding: 10px 14px; border-radius: 10px; box-shadow: var(--shadow); opacity: 0; transform: translateY(-15px); transition: all 0.3s ease; }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .slider-row { display: flex; gap: 12px; align-items: center; }
+    input[type="range"] { width: 140px; accent-color: #7cf0ff; }
+    input[type="checkbox"] { transform: scale(1.1); }
+    @media (max-width: 900px) { .panel { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; } }
+  </style>
 </head>
 <body>
-  <main class="container">
-    <h1>2v2 Tug-of-War – KI-Trainings-Demo</h1>
-    <section class="controls">
-      <div class="buttons">
-        <button id="trainBtn">Train AI</button>
-        <button id="demoBtn">Play Demo Match</button>
-        <label class="input-inline">
-          Episoden:
-          <input type="number" id="episodeInput" min="10" step="50" value="300" />
-        </label>
+  <header>
+    <div>
+      <h1>Labor-KI Trainings-Minispiel</h1>
+      <div class="tagline">Trainiere eine kleine KI, die Gefahren in einem geheimen Labor klassifiziert. Jede Runde generiert Objekte mit zufälligen Merkmalen, eine versteckte Welt-Regel liefert das echte Label, und dein Online-Lerner passt seine Gewichte sofort an.</div>
+    </div>
+    <div class="row">
+      <span class="pill" id="levelPill">Level 1 · Basis Features</span>
+      <span class="pill" id="modelPill">Modell: 2-Layer Netz</span>
+    </div>
+  </header>
+
+  <section class="grid">
+    <div class="card" style="grid-column: span 2;">
+      <h2>Haupt-Szene</h2>
+      <div class="panel">
+        <div>
+          <canvas id="sceneCanvas" width="600" height="220"></canvas>
+          <div class="overlay" id="featureText"></div>
+          <div class="row" style="margin-top: 10px;">
+            <label class="row" style="gap:6px;"><input type="checkbox" id="debugToggle"> Debug-Overlay (Ground Truth)</label>
+            <button class="secondary" id="nextBtn">Nächstes Objekt</button>
+          </div>
+        </div>
+        <div>
+          <h3>Aktive Features</h3>
+          <ul class="feature-list" id="featureList"></ul>
+          <div class="overlay" id="worldRuleInfo">Geheime Weltregel aktiv – finde sie heraus!</div>
+          <div class="row" style="margin-top:8px;">
+            <button id="resetWorldBtn" class="secondary">Neue Weltregel</button>
+          </div>
+        </div>
       </div>
-      <div class="stats" id="stats"></div>
-    </section>
+    </div>
 
-    <section class="canvas-wrapper">
-      <canvas id="gameCanvas" width="800" height="300"></canvas>
-    </section>
+    <div class="card">
+      <h2>AI-Vorhersage</h2>
+      <div id="predictionText" class="value">-</div>
+      <div id="uncertainty" class="label" style="margin:6px 0;">-</div>
+      <div id="probBars"></div>
+    </div>
 
-    <section class="info">
-      <h2>Beschreibung</h2>
-      <p>
-        Die vier Figuren werden per tabellenbasiertem Q-Learning trainiert. Der Seilmittlepunkt
-        zeigt an, welches Team gerade die Oberhand hat. Drücke <strong>Train AI</strong>, um mehrere
-        Episoden selbstständig ablaufen zu lassen. Mit <strong>Play Demo Match</strong> spielst du ein
-        einzelnes Match mit den aktuell gelernten Q-Werten. Jede Figur entscheidet pro Schritt zwischen
-        den Aktionen <em>pull</em>, <em>hold</em> und <em>rest</em>.
-      </p>
-    </section>
-  </main>
-  <script src="script.js"></script>
+    <div class="card">
+      <h2>Trainer-Panel</h2>
+      <div class="row">
+        <button class="safe" id="labelSafe">Tatsächlich Sicher</button>
+        <button class="danger" id="labelDanger">Tatsächlich Gefährlich</button>
+        <button class="unknown" id="labelUnknown">Tatsächlich Unbekannt</button>
+      </div>
+      <div id="feedback" style="margin-top:10px; color: var(--muted);"></div>
+    </div>
+
+    <div class="card">
+      <h2>Statistik</h2>
+      <div class="stat-grid">
+        <div class="stat"><div class="label">Runden</div><div class="value" id="roundStat">0</div></div>
+        <div class="stat"><div class="label">Accuracy</div><div class="value" id="accStat">0%</div></div>
+        <div class="stat"><div class="label">Level</div><div class="value" id="levelStat">1</div></div>
+        <div class="stat"><div class="label">Trainings-Samples</div><div class="value" id="sampleStat">0</div></div>
+      </div>
+      <div style="margin-top:10px;" id="classStats"></div>
+      <div id="badgeBar" style="margin-top:8px;"></div>
+    </div>
+
+    <div class="card">
+      <h2>Lernkurve</h2>
+      <canvas id="chartCanvas" width="600" height="160"></canvas>
+      <div class="label" id="chartLabel">Verfolge Accuracy und Verlust über Zeit</div>
+    </div>
+
+    <div class="card">
+      <h2>Gewichte & Feature-Importance</h2>
+      <ul class="weight-list" id="weightList"></ul>
+    </div>
+
+    <div class="card" style="grid-column: span 2;">
+      <h2>Kontroll-Panel</h2>
+      <div class="row" style="gap:10px; margin-bottom: 8px;">
+        <button id="resetModelBtn">Modell Reset</button>
+        <button id="autoBtn" class="secondary">Automatikmodus: aus</button>
+        <button id="switchModelBtn" class="secondary">Modell wechseln</button>
+      </div>
+      <div class="slider-row">
+        <span class="label">Learning Rate</span>
+        <input type="range" id="lrSlider" min="0.01" max="0.7" value="0.2" step="0.01">
+        <span class="value" id="lrValue">0.20</span>
+      </div>
+      <div style="margin-top:8px; color: var(--muted);">Tip: Aktiviere Automatikmodus, um die KI mit der geheimen Regel allein trainieren zu lassen. Steuere den Schwierigkeitsgrad über Levels und lerne die Signale kennen.</div>
+    </div>
+  </section>
+
+  <div id="toast" class="toast"></div>
+
+  <script>
+    // ------- Feature Definitionen & Level-Struktur -------
+    const featureSpace = {
+      shape: ['Kreis', 'Quadrat', 'Dreieck'],
+      color: ['Rot', 'Blau', 'Grün'],
+      size: ['Klein', 'Mittel', 'Groß'],
+      movement: ['Stehend', 'Langsam', 'Schnell'],
+      energy: ['Niedrig', 'Mittel', 'Hoch'],
+    };
+
+    const classes = ['Sicher', 'Gefährlich', 'Unbekannt'];
+
+    const levels = [
+      { id: 1, name: 'Basis Features', activeFeatures: ['shape', 'color'], roundsToNext: 16 },
+      { id: 2, name: 'Dynamik', activeFeatures: ['shape', 'color', 'size', 'movement'], roundsToNext: 24 },
+      { id: 3, name: 'Volle Komplexität', activeFeatures: Object.keys(featureSpace), roundsToNext: Infinity },
+    ];
+
+    // ------- Utility Helpers -------
+    const randChoice = (arr) => arr[Math.floor(Math.random() * arr.length)];
+    const softmax = (arr) => {
+      const max = Math.max(...arr);
+      const exp = arr.map((v) => Math.exp(v - max));
+      const sum = exp.reduce((a, b) => a + b, 0);
+      return exp.map((v) => v / sum);
+    };
+
+    const zeros = (n, m) => Array.from({ length: n }, () => Array(m).fill(0));
+    const randomMatrix = (n, m, scale = 0.2) => Array.from({ length: n }, () => Array.from({ length: m }, () => (Math.random() * 2 - 1) * scale));
+
+    // ------- Welt-Regel -------
+    function createWorldRule(activeFeatures) {
+      const requiredDanger = activeFeatures.map((f) => ({ feature: f, value: randChoice(featureSpace[f]) })).slice(0, 3);
+      const bonusFeature = randChoice(activeFeatures);
+      const bonusDanger = { feature: bonusFeature, value: randChoice(featureSpace[bonusFeature]) };
+      const unknownTriggers = activeFeatures.slice(0, 2).map((f) => ({ feature: f, value: randChoice(featureSpace[f]) }));
+      return { requiredDanger, bonusDanger, unknownTriggers, description: 'Versteckt – jedes Spiel neu.' };
+    }
+
+    function computeGroundTruth(sample, rule, level) {
+      // Danger score erhöht sich, wenn mehrere Bedingungen passen.
+      let dangerScore = 0;
+      rule.requiredDanger.forEach((cond) => { if (sample[cond.feature] === cond.value) dangerScore += 1; });
+      if (sample[rule.bonusDanger.feature] === rule.bonusDanger.value) dangerScore += 1.2;
+
+      // Unbekannt, wenn seltene Kombination aus unknownTriggers getroffen wird.
+      const unknownHit = rule.unknownTriggers.every((c) => sample[c.feature] === c.value);
+
+      if (unknownHit && level.id >= 2) return 'Unbekannt';
+      if (dangerScore >= Math.max(2, level.activeFeatures.length - 1)) return 'Gefährlich';
+      if (dangerScore >= 1.5 && level.id === 3) return 'Gefährlich';
+      return 'Sicher';
+    }
+
+    // ------- Feature-Encoding -------
+    function encodeSample(sample, activeFeatures) {
+      // One-Hot Encoding je Feature-Kategorie.
+      const vector = [];
+      activeFeatures.forEach((feature) => {
+        const values = featureSpace[feature];
+        values.forEach((v) => vector.push(sample[feature] === v ? 1 : 0));
+      });
+      return vector;
+    }
+
+    function featureCount(activeFeatures) {
+      return activeFeatures.reduce((acc, f) => acc + featureSpace[f].length, 0);
+    }
+
+    // ------- Modelle -------
+    class LogisticModel {
+      constructor(inputSize, outputSize) {
+        this.type = 'Logistic';
+        this.init(inputSize, outputSize);
+      }
+      init(inputSize, outputSize) {
+        this.W = randomMatrix(outputSize, inputSize, 0.2);
+        this.b = Array(outputSize).fill(0);
+      }
+      predict(x) {
+        const logits = this.W.map((row, i) => row.reduce((sum, w, idx) => sum + w * x[idx], this.b[i]));
+        return softmax(logits);
+      }
+      train(x, y, lr) {
+        const probs = this.predict(x);
+        const error = probs.map((p, i) => p - (i === y ? 1 : 0));
+        this.W = this.W.map((row, i) => row.map((w, j) => w - lr * error[i] * x[j]));
+        this.b = this.b.map((b, i) => b - lr * error[i]);
+        const loss = -Math.log(Math.max(probs[y], 1e-5));
+        return { loss, probs };
+      }
+    }
+
+    class TwoLayerNet {
+      constructor(inputSize, hidden = 24, outputSize = 3) {
+        this.type = '2-Layer Netz';
+        this.hidden = hidden;
+        this.init(inputSize, hidden, outputSize);
+      }
+      init(input, hidden, output) {
+        this.W1 = randomMatrix(hidden, input, 0.3);
+        this.b1 = Array(hidden).fill(0);
+        this.W2 = randomMatrix(output, hidden, 0.3);
+        this.b2 = Array(output).fill(0);
+      }
+      predict(x) {
+        const hRaw = this.W1.map((row, i) => row.reduce((s, w, idx) => s + w * x[idx], this.b1[i]));
+        const h = hRaw.map((v) => Math.max(0, v)); // ReLU
+        const logits = this.W2.map((row, i) => row.reduce((s, w, idx) => s + w * h[idx], this.b2[i]));
+        const probs = softmax(logits);
+        return { probs, h };
+      }
+      train(x, y, lr) {
+        const { probs, h } = this.predict(x);
+        const dLogits = probs.map((p, i) => p - (i === y ? 1 : 0));
+        // Grad W2, b2
+        const dW2 = this.W2.map((row, i) => row.map((w, j) => dLogits[i] * h[j]));
+        const db2 = dLogits;
+        // Backprop to hidden
+        const dh = h.map((_, j) => this.W2.reduce((sum, row, i) => sum + row[j] * dLogits[i], 0));
+        const dhRaw = dh.map((v, j) => (h[j] > 0 ? v : 0));
+        const dW1 = this.W1.map((row, i) => row.map((w, j) => dhRaw[i] * x[j]));
+        const db1 = dhRaw;
+        // Update
+        this.W2 = this.W2.map((row, i) => row.map((w, j) => w - lr * dW2[i][j]));
+        this.b2 = this.b2.map((b, i) => b - lr * db2[i]);
+        this.W1 = this.W1.map((row, i) => row.map((w, j) => w - lr * dW1[i][j]));
+        this.b1 = this.b1.map((b, i) => b - lr * db1[i]);
+        const loss = -Math.log(Math.max(probs[y], 1e-5));
+        return { loss, probs };
+      }
+    }
+
+    // ------- Game State -------
+    const state = {
+      levelIndex: 0,
+      round: 0,
+      samples: 0,
+      correct: 0,
+      lossHistory: [],
+      accHistory: [],
+      perClass: { Sicher: { total: 0, correct: 0 }, Gefährlich: { total: 0, correct: 0 }, Unbekannt: { total: 0, correct: 0 } },
+      badges: new Set(),
+      auto: null,
+      debug: false,
+    };
+
+    let activeModel;
+    let worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
+    let lastPrediction = null;
+    let currentSample = null;
+
+    // ------- UI References -------
+    const sceneCanvas = document.getElementById('sceneCanvas');
+    const sceneCtx = sceneCanvas.getContext('2d');
+    const chartCanvas = document.getElementById('chartCanvas');
+    const chartCtx = chartCanvas.getContext('2d');
+    const featureListEl = document.getElementById('featureList');
+    const featureTextEl = document.getElementById('featureText');
+    const predictionTextEl = document.getElementById('predictionText');
+    const uncertaintyEl = document.getElementById('uncertainty');
+    const probBarsEl = document.getElementById('probBars');
+    const feedbackEl = document.getElementById('feedback');
+    const roundStatEl = document.getElementById('roundStat');
+    const accStatEl = document.getElementById('accStat');
+    const levelStatEl = document.getElementById('levelStat');
+    const sampleStatEl = document.getElementById('sampleStat');
+    const classStatsEl = document.getElementById('classStats');
+    const badgeBarEl = document.getElementById('badgeBar');
+    const levelPill = document.getElementById('levelPill');
+    const modelPill = document.getElementById('modelPill');
+    const worldRuleInfo = document.getElementById('worldRuleInfo');
+    const lrSlider = document.getElementById('lrSlider');
+    const lrValue = document.getElementById('lrValue');
+    const toast = document.getElementById('toast');
+    const weightList = document.getElementById('weightList');
+
+    // ------- Rendering: Szene -------
+    function drawSample(sample, predictedLabel, groundTruth) {
+      sceneCtx.clearRect(0, 0, sceneCanvas.width, sceneCanvas.height);
+      const { color, size, shape, movement, energy } = sample;
+      const palette = { Rot: '#ff6b6b', Blau: '#6cafff', Grün: '#4cd964' };
+      const sizes = { Klein: 28, Mittel: 46, Groß: 70 };
+      const baseSize = sizes[size] || 40;
+      const x = sceneCanvas.width / 2;
+      const y = sceneCanvas.height / 2;
+      const movementShift = movement === 'Schnell' ? Math.sin(Date.now() / 200) * 22 : movement === 'Langsam' ? Math.sin(Date.now() / 400) * 12 : 0;
+
+      sceneCtx.save();
+      sceneCtx.translate(x + movementShift, y);
+      sceneCtx.fillStyle = palette[color] || '#fff';
+      sceneCtx.strokeStyle = '#0f0f1f';
+      sceneCtx.lineWidth = 3;
+
+      if (shape === 'Kreis') {
+        sceneCtx.beginPath();
+        sceneCtx.arc(0, 0, baseSize, 0, Math.PI * 2);
+        sceneCtx.fill(); sceneCtx.stroke();
+      } else if (shape === 'Quadrat') {
+        const s = baseSize * 1.4;
+        sceneCtx.beginPath();
+        sceneCtx.rect(-s / 2, -s / 2, s, s);
+        sceneCtx.fill(); sceneCtx.stroke();
+      } else {
+        const s = baseSize * 1.6;
+        sceneCtx.beginPath();
+        sceneCtx.moveTo(0, -s / 1.6);
+        sceneCtx.lineTo(-s / 2, s / 2);
+        sceneCtx.lineTo(s / 2, s / 2);
+        sceneCtx.closePath();
+        sceneCtx.fill(); sceneCtx.stroke();
+      }
+
+      // Energie-Aura
+      const glow = energy === 'Hoch' ? 0.7 : energy === 'Mittel' ? 0.45 : 0.25;
+      const gradient = sceneCtx.createRadialGradient(0, 0, baseSize * 0.4, 0, 0, baseSize * 2);
+      gradient.addColorStop(0, 'rgba(255,255,255,0.05)');
+      gradient.addColorStop(1, `rgba(255,255,255,${glow})`);
+      sceneCtx.fillStyle = gradient;
+      sceneCtx.globalCompositeOperation = 'lighter';
+      sceneCtx.beginPath(); sceneCtx.arc(0, 0, baseSize * 2, 0, Math.PI * 2); sceneCtx.fill();
+      sceneCtx.globalCompositeOperation = 'source-over';
+
+      // Debug Hinweis
+      if (state.debug) {
+        sceneCtx.font = '14px system-ui';
+        sceneCtx.fillStyle = groundTruth === 'Gefährlich' ? 'rgba(255,107,129,0.8)' : groundTruth === 'Unbekannt' ? 'rgba(254,202,87,0.8)' : 'rgba(76,217,100,0.8)';
+        sceneCtx.fillText(`Ground Truth: ${groundTruth}`, -90, -baseSize - 18);
+      }
+      sceneCtx.restore();
+
+      featureTextEl.innerHTML = `Form: <span class="highlight">${shape}</span> · Farbe: <span class="highlight">${color}</span> · Größe: <span class="highlight">${size}</span> · Bewegung: <span class="highlight">${movement}</span> · Energie: <span class="highlight">${energy}</span>`;
+    }
+
+    // ------- Rendering: Vorhersage -------
+    function renderPrediction(probs) {
+      probBarsEl.innerHTML = '';
+      classes.forEach((cls, idx) => {
+        const row = document.createElement('div');
+        row.className = 'prob-row';
+        const name = document.createElement('span');
+        name.textContent = cls;
+        const bar = document.createElement('div');
+        bar.className = 'bar';
+        const fill = document.createElement('span');
+        const color = cls === 'Gefährlich' ? 'linear-gradient(90deg, #ff4d6d, #ff9f43)' : cls === 'Sicher' ? 'linear-gradient(90deg, #2ecc71, #1dd1a1)' : 'linear-gradient(90deg, #f9c74f, #fca311)';
+        fill.style.background = color;
+        fill.style.width = `${(probs[idx] * 100).toFixed(1)}%`;
+        bar.appendChild(fill);
+        const value = document.createElement('span');
+        value.textContent = `${(probs[idx] * 100).toFixed(1)}%`;
+        row.appendChild(name); row.appendChild(bar); row.appendChild(value);
+        probBarsEl.appendChild(row);
+      });
+    }
+
+    // ------- Rendering: Statistik -------
+    function renderStats() {
+      roundStatEl.textContent = state.round;
+      sampleStatEl.textContent = state.samples;
+      const acc = state.samples ? (state.correct / state.samples) * 100 : 0;
+      accStatEl.textContent = `${acc.toFixed(1)}%`;
+      levelStatEl.textContent = levels[state.levelIndex].id;
+      const perClassText = Object.entries(state.perClass).map(([k, v]) => {
+        const a = v.total ? ((v.correct / v.total) * 100).toFixed(1) : '0.0';
+        return `<div>${k}: ${a}% (${v.correct}/${v.total})</div>`;
+      }).join('');
+      classStatsEl.innerHTML = perClassText;
+      renderBadges(acc);
+    }
+
+    function renderBadges(acc) {
+      badgeBarEl.innerHTML = '';
+      if (acc >= 30) state.badges.add('Bronze Lerner');
+      if (acc >= 60 && state.samples > 20) state.badges.add('Silberne Präzision');
+      if (acc >= 80 && state.samples > 40) state.badges.add('Goldener Forscher');
+      state.badges.forEach((b) => {
+        const span = document.createElement('span');
+        span.className = 'badge';
+        span.textContent = b;
+        badgeBarEl.appendChild(span);
+      });
+    }
+
+    // ------- Rendering: Lernkurve -------
+    function drawChart() {
+      chartCtx.clearRect(0,0,chartCanvas.width, chartCanvas.height);
+      const margin = 20;
+      const w = chartCanvas.width - margin * 2;
+      const h = chartCanvas.height - margin * 2;
+      chartCtx.strokeStyle = 'rgba(255,255,255,0.1)';
+      chartCtx.beginPath();
+      chartCtx.moveTo(margin, margin);
+      chartCtx.lineTo(margin, margin + h);
+      chartCtx.lineTo(margin + w, margin + h);
+      chartCtx.stroke();
+
+      const accData = state.accHistory.slice(-60);
+      const lossData = state.lossHistory.slice(-60);
+      if (!accData.length) return;
+      const maxX = accData.length - 1;
+      const mapX = (i) => margin + (i / Math.max(1, maxX)) * w;
+      const mapY = (v) => margin + h - v * h;
+
+      chartCtx.strokeStyle = '#7cf0ff';
+      chartCtx.beginPath();
+      accData.forEach((v, i) => {
+        const x = mapX(i);
+        const y = mapY(Math.min(1, v));
+        i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
+      });
+      chartCtx.stroke();
+
+      if (lossData.length) {
+        const maxLoss = Math.max(...lossData, 1);
+        chartCtx.strokeStyle = '#ff9f43';
+        chartCtx.beginPath();
+        lossData.forEach((v, i) => {
+          const x = mapX(i);
+          const y = margin + h - (v / maxLoss) * h;
+          i === 0 ? chartCtx.moveTo(x, y) : chartCtx.lineTo(x, y);
+        });
+        chartCtx.stroke();
+      }
+    }
+
+    // ------- Rendering: Gewichte -------
+    function updateWeightView() {
+      weightList.innerHTML = '';
+      const activeFeatures = levels[state.levelIndex].activeFeatures;
+      const inputSize = featureCount(activeFeatures);
+      const weightPerInput = new Array(inputSize).fill(0);
+
+      if (activeModel instanceof LogisticModel) {
+        activeModel.W.forEach((row) => row.forEach((w, i) => weightPerInput[i] += w));
+      } else {
+        activeModel.W1.forEach((row, h) => row.forEach((w, i) => weightPerInput[i] += Math.abs(w)));
+      }
+
+      let idx = 0;
+      activeFeatures.forEach((f) => {
+        const values = featureSpace[f];
+        const li = document.createElement('li');
+        const header = document.createElement('div');
+        header.innerHTML = `<strong>${f}</strong>`;
+        li.appendChild(header);
+        values.forEach((v) => {
+          const magnitude = Math.min(1, Math.abs(weightPerInput[idx]));
+          const bar = document.createElement('div');
+          bar.className = 'weight-bar';
+          const span = document.createElement('span');
+          span.style.width = `${(magnitude * 100).toFixed(1)}%`;
+          bar.appendChild(span);
+          const row = document.createElement('div');
+          row.className = 'flex-between';
+          row.innerHTML = `<span class="label">${v}</span><span class="value">${weightPerInput[idx].toFixed(2)}</span>`;
+          li.appendChild(row);
+          li.appendChild(bar);
+          idx += 1;
+        });
+        weightList.appendChild(li);
+      });
+    }
+
+    // ------- Badge & Level Handling -------
+    function maybeLevelUp(acc) {
+      const level = levels[state.levelIndex];
+      if (state.round >= level.roundsToNext && state.levelIndex < levels.length - 1 && acc > 0.55) {
+        state.levelIndex += 1;
+        worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
+        initModel();
+        showToast('Die KI hat ein Upgrade erhalten! Neue Features aktiv.');
+        refreshFeatureList();
+        updateUI();
+      }
+    }
+
+    // ------- Sample Generierung -------
+    function generateSample() {
+      const activeFeatures = levels[state.levelIndex].activeFeatures;
+      const sample = {};
+      activeFeatures.forEach((f) => { sample[f] = randChoice(featureSpace[f]); });
+      // inaktive Features auffüllen für UI
+      Object.keys(featureSpace).forEach((f) => { if (!sample[f]) sample[f] = randChoice(featureSpace[f]); });
+      return sample;
+    }
+
+    // ------- Training & Vorhersage -------
+    function predictAndRender(sample) {
+      const vector = encodeSample(sample, levels[state.levelIndex].activeFeatures);
+      const res = activeModel.predict(vector);
+      const probs = res.probs || res;
+      const bestIdx = probs.indexOf(Math.max(...probs));
+      const bestClass = classes[bestIdx];
+      lastPrediction = { probs, bestClass, vector };
+      predictionTextEl.textContent = `KI glaubt: ${bestClass}`;
+      const confidence = (probs[bestIdx] * 100).toFixed(1);
+      const warning = probs[bestIdx] < 0.6 ? 'Unsicher' : 'Stabil';
+      uncertaintyEl.textContent = `Confidence ${confidence}% · ${warning}`;
+      renderPrediction(probs);
+      drawSample(sample, bestClass, computeGroundTruth(sample, worldRule, levels[state.levelIndex]));
+    }
+
+    function trainOnLabel(label) {
+      if (!lastPrediction) return;
+      const y = classes.indexOf(label);
+      const lr = parseFloat(lrSlider.value);
+      const { loss, probs } = activeModel.train(lastPrediction.vector, y, lr);
+      const bestIdx = lastPrediction.probs.indexOf(Math.max(...lastPrediction.probs));
+      const predicted = classes[bestIdx];
+      const correct = predicted === label;
+      state.samples += 1;
+      if (correct) state.correct += 1;
+      state.perClass[label].total += 1;
+      if (correct) state.perClass[label].correct += 1;
+      state.lossHistory.push(loss);
+      const acc = state.correct / state.samples;
+      state.accHistory.push(acc);
+      feedbackEl.innerHTML = `Letzte Runde: KI sagte <strong>${predicted}</strong> (${(lastPrediction.probs[bestIdx]*100).toFixed(1)}%), richtig war <strong>${label}</strong>.`;
+      updateUI();
+      maybeLevelUp(acc);
+    }
+
+    // ------- UI Updates -------
+    function refreshFeatureList() {
+      const active = levels[state.levelIndex].activeFeatures;
+      featureListEl.innerHTML = '';
+      active.forEach((f) => {
+        const li = document.createElement('li');
+        li.innerHTML = `<div class="label">${f}</div><div class="value">${featureSpace[f].join(', ')}</div>`;
+        featureListEl.appendChild(li);
+      });
+      levelPill.textContent = `Level ${levels[state.levelIndex].id} · ${levels[state.levelIndex].name}`;
+    }
+
+    function updateUI() {
+      renderStats();
+      drawChart();
+      updateWeightView();
+      lrValue.textContent = parseFloat(lrSlider.value).toFixed(2);
+      modelPill.textContent = `Modell: ${activeModel.type}`;
+    }
+
+    function showToast(text) {
+      toast.textContent = text;
+      toast.classList.add('show');
+      setTimeout(() => toast.classList.remove('show'), 2200);
+    }
+
+    // ------- Kontrolle -------
+    function resetModel() {
+      initModel();
+      state.round = 0; state.samples = 0; state.correct = 0; state.lossHistory = []; state.accHistory = [];
+      state.perClass = { Sicher: { total: 0, correct: 0 }, Gefährlich: { total: 0, correct: 0 }, Unbekannt: { total: 0, correct: 0 } };
+      state.badges.clear();
+      showToast('Modell zurückgesetzt. Gewichte neu initialisiert.');
+      updateUI();
+    }
+
+    function resetWorldRule() {
+      worldRule = createWorldRule(levels[state.levelIndex].activeFeatures);
+      showToast('Neue geheime Weltregel generiert.');
+    }
+
+    function toggleAuto() {
+      if (state.auto) {
+        clearInterval(state.auto);
+        state.auto = null;
+        document.getElementById('autoBtn').textContent = 'Automatikmodus: aus';
+      } else {
+        state.auto = setInterval(() => {
+          runRound(true);
+        }, 600);
+        document.getElementById('autoBtn').textContent = 'Automatikmodus: an';
+      }
+    }
+
+    function switchModel() {
+      const wasLog = activeModel instanceof LogisticModel;
+      const activeFeatures = levels[state.levelIndex].activeFeatures;
+      const inputSize = featureCount(activeFeatures);
+      activeModel = wasLog ? new TwoLayerNet(inputSize, 24, classes.length) : new LogisticModel(inputSize, classes.length);
+      modelPill.textContent = `Modell: ${activeModel.type}`;
+      showToast(`Wechsel zu ${activeModel.type}`);
+      updateUI();
+    }
+
+    // ------- Rundensteuerung -------
+    function runRound(auto = false) {
+      state.round += 1;
+      currentSample = generateSample();
+      const truth = computeGroundTruth(currentSample, worldRule, levels[state.levelIndex]);
+      predictAndRender(currentSample);
+      worldRuleInfo.textContent = auto ? 'Automatik lernt mit Ground Truth' : 'Geheime Weltregel aktiv – trainiere die KI!';
+      if (auto) trainOnLabel(truth);
+    }
+
+    // ------- Initialisierung -------
+    function initModel() {
+      const activeFeatures = levels[state.levelIndex].activeFeatures;
+      const inputSize = featureCount(activeFeatures);
+      activeModel = new TwoLayerNet(inputSize, 24, classes.length);
+      refreshFeatureList();
+    }
+
+    function bindEvents() {
+      document.getElementById('labelSafe').onclick = () => trainOnLabel('Sicher');
+      document.getElementById('labelDanger').onclick = () => trainOnLabel('Gefährlich');
+      document.getElementById('labelUnknown').onclick = () => trainOnLabel('Unbekannt');
+      document.getElementById('nextBtn').onclick = () => runRound(false);
+      document.getElementById('resetModelBtn').onclick = resetModel;
+      document.getElementById('resetWorldBtn').onclick = () => { resetWorldRule(); runRound(false); };
+      document.getElementById('autoBtn').onclick = toggleAuto;
+      document.getElementById('switchModelBtn').onclick = switchModel;
+      document.getElementById('debugToggle').onchange = (e) => { state.debug = e.target.checked; drawSample(currentSample || generateSample(), 'Sicher', 'Sicher'); };
+      lrSlider.oninput = () => { lrValue.textContent = parseFloat(lrSlider.value).toFixed(2); };
+    }
+
+    function bootstrap() {
+      initModel();
+      bindEvents();
+      updateUI();
+      runRound(false);
+      setInterval(() => { if (!state.auto) predictAndRender(currentSample); }, 300); // für Bewegung/Animation
+    }
+
+    bootstrap();
+  </script>
 </body>
 </html>
