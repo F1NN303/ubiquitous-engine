@@ -14,13 +14,15 @@ Then open `http://localhost:8000`.
 
 ## Publish to GitHub Pages
 
-This repository includes a GitHub Actions workflow that deploys `index.html` automatically.
+This repository includes a GitHub Actions workflow that deploys the static site to the `gh-pages` branch automatically.
 
-1. Push this repository to GitHub.
-2. In GitHub, go to **Settings → Pages**.
-3. Under **Build and deployment**, choose **GitHub Actions** as the source.
-4. Push to `main` (or trigger the workflow manually in **Actions**).
-5. Your game will be available at:
+1. Make sure the repository visibility is **Public**.
+2. Push this repository to GitHub.
+3. In GitHub, go to **Settings → Pages**.
+4. Under **Build and deployment**, choose **Deploy from a branch**.
+5. Select branch **`gh-pages`** and folder **`/ (root)`**.
+6. Push to `main` (or trigger the workflow manually in **Actions**).
+7. Your game will be available at:
    - `https://<your-username>.github.io/<repo-name>/`
 
 ## Mobile controls
