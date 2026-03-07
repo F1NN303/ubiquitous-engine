@@ -4,6 +4,8 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="theme-color" content="#0f172a" />
   <title>Cell Arena — One-File Agar-Style Game</title>
   <style>
     :root {
@@ -61,6 +63,28 @@
     .panel { background:#0f172aee; color:var(--text); width:min(380px,92vw); border-radius:16px; padding:18px; }
     .panel h3 { margin:0 0 8px; }
     .panel p { margin:6px 0; color:#cdd8ef; }
+
+    @media (max-width: 780px) {
+      .hud {
+        top: calc(8px + env(safe-area-inset-top));
+        left: calc(8px + env(safe-area-inset-left));
+        min-width: 0;
+        width: min(56vw, 220px);
+        padding: 8px 10px;
+      }
+      .leaderboard {
+        top: calc(8px + env(safe-area-inset-top));
+        right: calc(8px + env(safe-area-inset-right));
+        min-width: 0;
+        width: min(40vw, 165px);
+        padding: 8px 10px;
+      }
+      .hud p, .leaderboard ol { font-size: 11px; }
+      .tip { display: none; }
+      #stick { width: 116px; height: 116px; }
+      #knob { width: 50px; height: 50px; }
+      button { min-width: 76px; padding: 12px 12px; }
+    }
   </style>
 </head>
 <body>
@@ -414,7 +438,12 @@
       ctx.setTransform(dpr,0,0,dpr,0,0);
     }
     addEventListener('resize', size, {passive:true});
+    addEventListener('orientationchange', ()=>setTimeout(size, 120), {passive:true});
     size();
+
+    ['gesturestart', 'gesturechange', 'gestureend'].forEach(type => {
+      document.addEventListener(type, e => e.preventDefault(), {passive:false});
+    });
 
     function normStick(clientX, clientY){
       const r = stickEl.getBoundingClientRect();
@@ -441,6 +470,8 @@
       if (e.code==='Space') splitCell(player);
       if (e.code==='KeyW') ejectMass(player);
     });
+
+    document.body.addEventListener('touchmove', e=>e.preventDefault(), {passive:false});
 
     resetGame();
   </script>
