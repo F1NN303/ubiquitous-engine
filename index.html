@@ -165,12 +165,20 @@
       player = createCell('You', WORLD/2, WORLD/2, 10, '#3b82f6', true);
       bots = Array.from({length:BOT_COUNT}, (_,i)=>createCell(`Bot ${i+1}`, rand(100,WORLD-100), rand(100,WORLD-100), rand(9,24), `hsl(${rand(0,360)} 75% 60%)`));
       over = false;
+      cam.x = WORLD / 2;
+      cam.y = WORLD / 2;
+      cam.zoom = 1;
       overlay.style.display = 'none';
       last = performance.now();
       requestAnimationFrame(loop);
     }
 
     function getTotalMass(c){ return c.pieces.reduce((s,p)=>s+p.mass,0); }
+
+    function getMainPiece(cell){
+      if (!cell.pieces.length) return null;
+      return cell.pieces.reduce((largest, piece) => piece.mass > largest.mass ? piece : largest, cell.pieces[0]);
+    }
 
     function splitCell(cell){
       if (cell.splitCd > 0 || cell.pieces.length >= 16) return;
@@ -235,7 +243,7 @@
         bot.aiTimer -= dt;
         if (bot.aiTimer <= 0){
           bot.aiTimer = rand(0.2, 0.5);
-          const main = bot.pieces[0];
+          const main = getMainPiece(bot);
           if (!main) continue;
           let bestT = null;
           for (const t of targets){
@@ -322,7 +330,7 @@
     }
 
     function updatePlayerTarget(){
-      const main = player.pieces[0];
+      const main = getMainPiece(player);
       if (!main) return;
       const mag = Math.hypot(stick.dx, stick.dy);
       if (mag < 0.001){ player.target.x = main.x; player.target.y = main.y; return; }
@@ -332,9 +340,14 @@
 
     function computeCamera(){
       if (!player.pieces.length) return;
+      const main = getMainPiece(player);
+      if (!main) return;
       let cx=0,cy=0,tm=0;
       for (const p of player.pieces){ cx += p.x*p.mass; cy += p.y*p.mass; tm += p.mass; }
-      cam.x = cx/tm; cam.y = cy/tm;
+      const centerX = cx / tm;
+      const centerY = cy / tm;
+      cam.x += ((main.x * 0.75 + centerX * 0.25) - cam.x) * 0.22;
+      cam.y += ((main.y * 0.75 + centerY * 0.25) - cam.y) * 0.22;
       const m = getTotalMass(player);
       cam.zoom = clamp(1.4 - Math.log10(m+1)*0.35, 0.34, 1.25);
     }
@@ -386,10 +399,17 @@
           const g=ctx.createRadialGradient(s.x-r*0.35,s.y-r*0.35,r*0.2,s.x,s.y,r);
           g.addColorStop(0,'#ffffff99'); g.addColorStop(1,c.color);
           ctx.fillStyle=g; ctx.beginPath(); ctx.arc(s.x,s.y,r,0,Math.PI*2); ctx.fill();
-          if (r > 14){
+          if (c.human){
+            ctx.strokeStyle = '#ffffffcc';
+            ctx.lineWidth = Math.max(2, r * 0.08);
+            ctx.beginPath();
+            ctx.arc(s.x, s.y, r + Math.max(3, r * 0.05), 0, Math.PI * 2);
+            ctx.stroke();
+          }
+          if (r > 14 || c.human){
             ctx.fillStyle='white'; ctx.textAlign='center';
             ctx.font=`${Math.max(11, r*0.24)}px Inter, sans-serif`;
-            ctx.fillText(c.name, s.x, s.y-r*0.03);
+            ctx.fillText(c.human ? 'You' : c.name, s.x, s.y-r*0.03);
             ctx.font=`${Math.max(10, r*0.2)}px Inter, sans-serif`;
             ctx.fillText(Math.floor(p.mass), s.x, s.y+r*0.28);
           }
