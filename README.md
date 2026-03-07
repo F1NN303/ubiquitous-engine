@@ -4,15 +4,22 @@ This repository now contains a **single-file playable Agar-style game** built fo
 
 ## Run
 
-Because browser security can block some features on `file://`, run a tiny local server:
+Because browser security can block some features on `file://`, run the included web server:
 
 ```bash
-python3 -m http.server 8000
+python3 server.py
 ```
 
 Then open:
 
-- `http://localhost:8000/index.html`
+- `http://localhost:8000/index.html` (same device)
+- `http://<your-machine-ip>:8000/index.html` (from another device on your network)
+
+You can also override host/port for cloud/container environments:
+
+```bash
+HOST=0.0.0.0 PORT=8080 python3 server.py
+```
 
 ## Controls
 
