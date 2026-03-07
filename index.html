@@ -1,648 +1,448 @@
 <!DOCTYPE html>
-<html lang="de">
+<html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Shadow Arena – Online Learning AI</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <title>Cell Arena — One-File Agar-Style Game</title>
   <style>
     :root {
-      --bg: radial-gradient(circle at 20% 20%, #1f2a44, #0f1222 60%);
-      --panel: rgba(255, 255, 255, 0.04);
-      --panel-strong: rgba(255, 255, 255, 0.08);
-      --text: #e8ecff;
-      --muted: #9fb0d1;
-      --accent: #7cf0ff;
-      --accent-2: #ff9ff3;
-      --danger: #ff6b81;
-      --safe: #4cd964;
-      --shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
-      font-family: "Inter", system-ui, -apple-system, sans-serif;
+      --bg:#f4f7fb;
+      --hud:#0f172acc;
+      --text:#ecf3ff;
+      --accent:#60a5fa;
+      --accent2:#34d399;
+      --danger:#f43f5e;
+      --line:#dbe7ff;
     }
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      padding: 20px;
-      min-height: 100vh;
-      color: var(--text);
-      background: var(--bg);
+    * { box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+    html, body { margin:0; height:100%; overflow:hidden; background:var(--bg); font-family:Inter,system-ui,-apple-system,sans-serif; }
+    body { touch-action:none; }
+    #game { width:100vw; height:100vh; display:block; }
+    .hud {
+      position:fixed; left:12px; top:12px; z-index:5; color:var(--text); background:var(--hud);
+      border-radius:14px; padding:10px 12px; min-width:190px; box-shadow:0 10px 30px #00000033;
+      backdrop-filter: blur(8px);
     }
-    header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      gap: 16px;
-      flex-wrap: wrap;
-      margin-bottom: 16px;
+    .hud h1{ margin:0 0 4px; font-size:15px; font-weight:700; }
+    .hud p{ margin:2px 0; font-size:13px; }
+    .tip { opacity:.82; max-width:220px; }
+    .leaderboard {
+      position:fixed; right:12px; top:12px; z-index:5; color:var(--text); background:var(--hud);
+      border-radius:14px; padding:10px 12px; min-width:180px; box-shadow:0 10px 30px #00000033;
     }
-    h1 { margin: 0; letter-spacing: 0.6px; font-size: 1.8rem; }
-    .tagline { color: var(--muted); max-width: 720px; line-height: 1.5; }
-    .layout {
-      display: grid;
-      grid-template-columns: 2fr 1fr;
-      gap: 16px;
+    .leaderboard h2 { margin:0 0 6px; font-size:14px; }
+    .leaderboard ol { margin:0; padding-left:18px; font-size:12px; }
+    .controls {
+      position:fixed; left:0; right:0; bottom:0; z-index:6;
+      display:flex; justify-content:space-between; align-items:flex-end; padding:14px calc(10px + env(safe-area-inset-right)) calc(12px + env(safe-area-inset-bottom)) calc(10px + env(safe-area-inset-left));
+      pointer-events:none;
     }
-    .card {
-      background: var(--panel);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-radius: 14px;
-      padding: 14px 16px;
-      box-shadow: var(--shadow);
-      backdrop-filter: blur(10px);
+    #stick {
+      width:132px; height:132px; border-radius:50%; background:#0f172a55; border:2px solid #ffffff55;
+      position:relative; pointer-events:auto;
+      touch-action:none;
     }
-    .card h2 { margin: 0 0 8px; font-size: 1.1rem; letter-spacing: 0.3px; }
-    .row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
-    .col { display: flex; flex-direction: column; gap: 8px; }
+    #knob {
+      position:absolute; left:50%; top:50%; width:56px; height:56px; transform:translate(-50%,-50%);
+      border-radius:50%; background:linear-gradient(135deg,var(--accent),#3b82f6); box-shadow:0 6px 16px #00000055;
+    }
+    .actions { display:flex; gap:10px; pointer-events:auto; }
     button {
-      background: linear-gradient(120deg, #3c4ca0, #6b5edc);
-      color: white;
-      border: none;
-      border-radius: 12px;
-      padding: 10px 14px;
-      font-weight: 700;
-      letter-spacing: 0.3px;
-      cursor: pointer;
-      transition: transform 0.12s ease, box-shadow 0.12s ease, filter 0.2s;
-      box-shadow: 0 10px 24px rgba(0,0,0,0.35);
+      border:none; color:#fff; font-weight:700; border-radius:12px; padding:14px 16px; min-width:86px;
+      box-shadow:0 8px 20px #00000044; font-size:14px;
     }
-    button:hover { transform: translateY(-2px); filter: brightness(1.05); }
-    button:active { transform: translateY(0); filter: brightness(0.95); }
-    button.secondary { background: #2f3645; }
-    button.danger { background: linear-gradient(120deg, #ff4d6d, #ff6b81); }
-    .stat-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 10px; }
-    .stat { background: var(--panel-strong); padding: 10px; border-radius: 10px; text-align: center; }
-    .stat .label { color: var(--muted); font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.6px; }
-    .stat .value { font-size: 1.2rem; font-weight: 800; }
-    .pill { padding: 6px 10px; border-radius: 20px; background: var(--panel-strong); color: var(--muted); font-weight: 700; letter-spacing: 0.3px; }
-    .badge { display: inline-block; padding: 6px 10px; border-radius: 10px; background: #1c2738; color: var(--text); border: 1px solid rgba(255,255,255,0.1); }
-    .slider-row { display: flex; align-items: center; gap: 10px; }
-    input[type="range"] { width: 160px; accent-color: var(--accent); }
-    canvas#game { width: 100%; height: 420px; background: #0c1120; border-radius: 14px; border: 1px solid rgba(255,255,255,0.08); box-shadow: inset 0 0 20px rgba(0,0,0,0.4); }
-    canvas#chart { width: 100%; height: 180px; background: #0d101c; border-radius: 10px; border: 1px solid rgba(255,255,255,0.07); }
-    .list { list-style: none; padding: 0; margin: 0; display: grid; gap: 6px; }
-    .list li { background: var(--panel-strong); padding: 8px 10px; border-radius: 10px; }
-    .bar { height: 8px; background: rgba(255,255,255,0.08); border-radius: 10px; overflow: hidden; }
-    .bar span { display: block; height: 100%; background: linear-gradient(90deg, #ff6b6b, #6c5ce7); }
-    @media (max-width: 1000px) { .layout { grid-template-columns: 1fr; } header { flex-direction: column; align-items: flex-start; } }
+    #splitBtn { background:linear-gradient(135deg,var(--accent2),#10b981); }
+    #ejectBtn { background:linear-gradient(135deg,var(--danger),#e11d48); }
+    #restartBtn { background:linear-gradient(135deg,#818cf8,#6366f1); margin-top:8px; width:100%; }
+    .overlay {
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:10; background:#02061799;
+    }
+    .panel { background:#0f172aee; color:var(--text); width:min(380px,92vw); border-radius:16px; padding:18px; }
+    .panel h3 { margin:0 0 8px; }
+    .panel p { margin:6px 0; color:#cdd8ef; }
   </style>
 </head>
 <body>
-  <header>
-    <div>
-      <h1>Shadow Arena – Online lernender KI-Buddy</h1>
-      <div class="tagline">Steuere den Runner mit WASD. Sammle Energie-Orbs, weiche Gefahren aus. Ein KI-Buddy beobachtet dich und lernt per Online-Behavior-Cloning in Echtzeit deine Aktionen nachzuahmen, um dir zu helfen.</div>
-    </div>
-    <div class="row">
-      <span class="pill" id="modeLabel">Modus: Beobachten</span>
-      <span class="pill" id="episodeLabel">Episode 1</span>
-    </div>
-  </header>
+  <canvas id="game"></canvas>
 
-  <section class="layout">
-    <div class="card">
-      <h2>Game-View</h2>
-      <canvas id="game" width="960" height="420"></canvas>
-      <div class="stat-grid" style="margin-top: 10px;">
-        <div class="stat"><div class="label">Player HP</div><div class="value" id="hpStat">100</div></div>
-        <div class="stat"><div class="label">Score</div><div class="value" id="scoreStat">0</div></div>
-        <div class="stat"><div class="label">KI Score</div><div class="value" id="allyStat">0</div></div>
-        <div class="stat"><div class="label">Timer</div><div class="value" id="timeStat">0</div></div>
-      </div>
-    </div>
+  <div class="hud">
+    <h1>Cell Arena</h1>
+    <p>Mass: <b id="mass">10</b></p>
+    <p>Rank: <b id="rank">-</b></p>
+    <p>Best: <b id="best">10</b></p>
+    <p class="tip">Move with joystick. Split for attacks. Eject mass to bait or feed.</p>
+  </div>
 
-    <div class="col">
-      <div class="card">
-        <h2>KI-Status</h2>
-        <div class="row">
-          <span class="badge" id="aiDecision">-</span>
-          <span class="badge" id="aiMode">Online-Lernen</span>
-        </div>
-        <div class="stat-grid" style="margin-top:10px;">
-          <div class="stat"><div class="label">Samples</div><div class="value" id="sampleCount">0</div></div>
-          <div class="stat"><div class="label">Updates</div><div class="value" id="updateCount">0</div></div>
-          <div class="stat"><div class="label">Epsilon</div><div class="value" id="epsilonVal">0.1</div></div>
-          <div class="stat"><div class="label">LR</div><div class="value" id="lrVal">0.05</div></div>
-        </div>
-        <div class="list" id="featureList"></div>
-      </div>
+  <aside class="leaderboard">
+    <h2>Leaderboard</h2>
+    <ol id="board"></ol>
+  </aside>
 
-      <div class="card">
-        <h2>Lernkurve</h2>
-        <canvas id="chart" width="520" height="180"></canvas>
-      </div>
+  <div class="controls">
+    <div id="stick"><div id="knob"></div></div>
+    <div class="actions">
+      <button id="splitBtn">Split</button>
+      <button id="ejectBtn">Eject</button>
     </div>
-  </section>
+  </div>
 
-  <section class="layout" style="margin-top: 14px; grid-template-columns: 1.2fr 1fr 1fr;">
-    <div class="card">
-      <h2>Modell-Panel</h2>
-      <div class="row" style="justify-content: space-between;">
-        <div class="badge">Features: <span id="featCount">0</span></div>
-        <div class="badge">Aktionen: <span id="actCount">0</span></div>
-      </div>
-      <div class="list" id="weightList" style="margin-top:8px;"></div>
+  <div id="overlay" class="overlay">
+    <div class="panel">
+      <h3>Game Over</h3>
+      <p id="final"></p>
+      <button id="restartBtn">Play Again</button>
     </div>
-
-    <div class="card">
-      <h2>Kontrollen</h2>
-      <div class="slider-row">
-        <label>Learning Rate</label>
-        <input type="range" id="lrSlider" min="0.01" max="0.5" step="0.01" value="0.05">
-        <span class="badge" id="lrLabel">0.05</span>
-      </div>
-      <div class="slider-row">
-        <label>Exploration ε</label>
-        <input type="range" id="epsSlider" min="0" max="0.6" step="0.02" value="0.10">
-        <span class="badge" id="epsLabel">0.10</span>
-      </div>
-      <div class="col" style="margin-top: 6px;">
-        <button id="resetModel" class="secondary">KI-Model Reset</button>
-        <button id="resetData" class="secondary">Daten zurücksetzen</button>
-        <button id="newRound" class="danger">Neue Runde</button>
-      </div>
-      <p style="color: var(--muted); margin: 6px 0 0; font-size: 0.9rem;">Der KI-Buddy nutzt Behavior-Cloning: jeder Spielerzug wird als (State, Action)-Paar gespeichert und mittels SGD trainiert, um deine Steuerung zu imitieren. Epsilon erzeugt Zufallsaktionen zum Erkunden.</p>
-    </div>
-
-    <div class="card">
-      <h2>Episode/Performance</h2>
-      <div class="list" id="episodeList"></div>
-    </div>
-  </section>
+  </div>
 
   <script>
-    // --- Game constants ---
+    const WORLD = 4200;
+    const FOOD_COUNT = 900;
+    const BOT_COUNT = 16;
+    const VIRUS_COUNT = 22;
     const canvas = document.getElementById('game');
     const ctx = canvas.getContext('2d');
-    const chartCanvas = document.getElementById('chart');
-    const chartCtx = chartCanvas.getContext('2d');
-    const W = canvas.width; const H = canvas.height;
-    const keys = { w:false, a:false, s:false, d:false };
-    const actions = ['up','down','left','right','idle']; // action space
+    const massEl = document.getElementById('mass');
+    const rankEl = document.getElementById('rank');
+    const bestEl = document.getElementById('best');
+    const boardEl = document.getElementById('board');
+    const overlay = document.getElementById('overlay');
+    const finalEl = document.getElementById('final');
 
-    // --- Entities ---
-    let player, ally, orbs, enemies, obstacles;
-    let score = 0, allyScore = 0, hp = 100, timer = 60, episode = 1, difficulty = 1;
-    let samples = [], updates = 0, episodeHistory = [];
-    let lastTime = 0, running = true, dt = 0;
-    const maxSamples = 800;
-
-    // --- Model parameters ---
-    let lr = 0.05; // learning rate
-    let epsilon = 0.1; // exploration
-    const inputSize = 10; // dx/dy player->orb/enemy, player velocity, ally relative
-    const hiddenSize = 12;
-    const outputSize = actions.length;
-    let W1, b1, W2, b2;
-
-    // --- DOM refs ---
-    const hpStat = document.getElementById('hpStat');
-    const scoreStat = document.getElementById('scoreStat');
-    const allyStat = document.getElementById('allyStat');
-    const timeStat = document.getElementById('timeStat');
-    const sampleCount = document.getElementById('sampleCount');
-    const updateCount = document.getElementById('updateCount');
-    const epsilonVal = document.getElementById('epsilonVal');
-    const lrVal = document.getElementById('lrVal');
-    const featureList = document.getElementById('featureList');
-    const modeLabel = document.getElementById('modeLabel');
-    const episodeLabel = document.getElementById('episodeLabel');
-    const aiDecision = document.getElementById('aiDecision');
-    const aiMode = document.getElementById('aiMode');
-    const featCount = document.getElementById('featCount');
-    const actCount = document.getElementById('actCount');
-    const weightList = document.getElementById('weightList');
-    const episodeList = document.getElementById('episodeList');
-    const lrSlider = document.getElementById('lrSlider');
-    const epsSlider = document.getElementById('epsSlider');
-    const lrLabel = document.getElementById('lrLabel');
-    const epsLabel = document.getElementById('epsLabel');
-
-    // --- Utility functions ---
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
     const rand = (a,b)=>Math.random()*(b-a)+a;
-    const sign = v => v>=0?1:-1;
+    const clamp = (n,a,b)=>Math.max(a,Math.min(b,n));
+    const dist = (a,b)=>Math.hypot(a.x-b.x,a.y-b.y);
+    const radiusFromMass = m => Math.sqrt(m) * 4;
 
-    function randn(scale=1){ return (Math.random()*2-1)*scale; }
-    function zeros(len){ return new Array(len).fill(0); }
+    let best = Number(localStorage.getItem('cellarena_best') || 10);
+    bestEl.textContent = Math.floor(best);
 
-    function initModel(){
-      W1 = Array.from({length: hiddenSize}, ()=> Array.from({length: inputSize}, ()=>randn(0.5)));
-      b1 = Array.from({length: hiddenSize}, ()=>randn(0.1));
-      W2 = Array.from({length: outputSize}, ()=> Array.from({length: hiddenSize}, ()=>randn(0.5)));
-      b2 = Array.from({length: outputSize}, ()=>randn(0.1));
-      updates = 0;
-      updateModelView();
-    }
+    let stick = {active:false,id:null,cx:0,cy:0,dx:0,dy:0};
+    const stickEl = document.getElementById('stick');
+    const knob = document.getElementById('knob');
 
-    // Forward pass: returns logits and cache
-    function forward(state){
-      const h = zeros(hiddenSize);
-      for(let i=0;i<hiddenSize;i++){
-        let sum = b1[i];
-        for(let j=0;j<inputSize;j++) sum += W1[i][j]*state[j];
-        h[i] = Math.max(0, sum); // ReLU
-      }
-      const o = zeros(outputSize);
-      for(let k=0;k<outputSize;k++){
-        let sum = b2[k];
-        for(let i=0;i<hiddenSize;i++) sum += W2[k][i]*h[i];
-        o[k] = sum;
-      }
-      return {h, o};
-    }
+    let foods, viruses, pellets, player, bots, over, last, cam = {x:0,y:0,zoom:1};
 
-    function softmax(logits){
-      const max = Math.max(...logits);
-      const exps = logits.map(v=>Math.exp(v-max));
-      const sum = exps.reduce((a,b)=>a+b,0);
-      return exps.map(v=>v/sum);
-    }
-
-    // Backprop for single sample, cross-entropy
-    function trainStep(state, actionIdx){
-      const {h, o} = forward(state);
-      const probs = softmax(o);
-      const gradLogits = probs.map((p,idx)=> p - (idx===actionIdx?1:0));
-      // dW2, db2
-      for(let k=0;k<outputSize;k++){
-        for(let i=0;i<hiddenSize;i++){
-          W2[k][i] -= lr * gradLogits[k] * h[i];
-        }
-        b2[k] -= lr * gradLogits[k];
-      }
-      const gradH = zeros(hiddenSize);
-      for(let i=0;i<hiddenSize;i++){
-        let sum = 0; for(let k=0;k<outputSize;k++) sum += gradLogits[k]*W2[k][i];
-        gradH[i] = sum * (h[i]>0?1:0);
-      }
-      for(let i=0;i<hiddenSize;i++){
-        for(let j=0;j<inputSize;j++){
-          W1[i][j] -= lr * gradH[i] * state[j];
-        }
-        b1[i] -= lr * gradH[i];
-      }
-      updates++;
-    }
-
-    // --- Game setup ---
-    function initGame(){
-      player = {x: W*0.25, y: H*0.5, r: 12, speed: 160, vx:0, vy:0};
-      ally   = {x: W*0.6, y: H*0.5, r: 10, speed: 150, vx:0, vy:0};
-      score = 0; allyScore = 0; hp = 100; timer = 60;
-      orbs = []; enemies = []; obstacles = [];
-      for(let i=0;i<5;i++) spawnOrb();
-      for(let i=0;i<3;i++) spawnEnemy();
-      createObstacles();
-      modeLabel.textContent = 'Modus: Beobachten & Lernen';
-      episodeLabel.textContent = `Episode ${episode}`;
-      updateHUD();
-      featureList.innerHTML = renderFeatures();
-      running = true;
-    }
-
-    function createObstacles(){
-      obstacles = [
-        {x: W*0.3, y: H*0.2, w: 120, h: 18},
-        {x: W*0.55, y: H*0.7, w: 160, h: 20},
-        {x: W*0.15, y: H*0.6, w: 100, h: 20},
-      ];
-    }
-
-    function spawnOrb(){
-      orbs.push({x: rand(40, W-40), y: rand(40, H-40), r: 8});
-    }
-
-    function spawnEnemy(){
-      enemies.push({x: rand(60, W-60), y: rand(60, H-60), r: 12, speed: 90 + difficulty*10, dir: Math.random()*Math.PI*2});
-    }
-
-    // --- Input ---
-    window.addEventListener('keydown', e=>{ if(['w','a','s','d'].includes(e.key)) keys[e.key]=true; });
-    window.addEventListener('keyup', e=>{ if(['w','a','s','d'].includes(e.key)) keys[e.key]=false; });
-
-    // --- State vector for agent ---
-    // [dx_to_player, dy_to_player, dx_to_orb, dy_to_orb, dx_to_enemy, dy_to_enemy, ally_vx, ally_vy, player_vx, player_vy]
-    function getState(){
-      const nearestOrb = orbs.reduce((best,o)=>{
-        const d = (o.x-ally.x)**2 + (o.y-ally.y)**2; return d < best.dist? {obj:o, dist:d}: best; 
-      }, {obj:null, dist: Infinity}).obj || {x:ally.x, y:ally.y};
-      const nearestEnemy = enemies.reduce((best,en)=>{
-        const d = (en.x-ally.x)**2 + (en.y-ally.y)**2; return d < best.dist? {obj:en, dist:d}: best; 
-      }, {obj:null, dist: Infinity}).obj || {x:ally.x, y:ally.y};
-      const state = [
-        (player.x - ally.x)/W,
-        (player.y - ally.y)/H,
-        (nearestOrb.x - ally.x)/W,
-        (nearestOrb.y - ally.y)/H,
-        (nearestEnemy.x - ally.x)/W,
-        (nearestEnemy.y - ally.y)/H,
-        ally.vx/ally.speed,
-        ally.vy/ally.speed,
-        player.vx/player.speed,
-        player.vy/player.speed
-      ];
-      return state;
-    }
-
-    function playerAction(){
-      let ax=0, ay=0;
-      if(keys.w) ay -= 1;
-      if(keys.s) ay += 1;
-      if(keys.a) ax -= 1;
-      if(keys.d) ax += 1;
-      const len = Math.hypot(ax,ay)||1;
-      ax/=len; ay/=len;
-      player.vx = ax * player.speed; player.vy = ay * player.speed;
-      player.x = clamp(player.x + player.vx*dt, player.r, W-player.r);
-      player.y = clamp(player.y + player.vy*dt, player.r, H-player.r);
-      collideObstacles(player);
-      // return chosen action index for training
-      let idx = 4; // idle
-      if(ax||ay){
-        if(Math.abs(ax)>Math.abs(ay)) idx = ax>0?3:2; // right/left
-        else idx = ay>0?1:0; // down/up
-      }
-      return idx;
-    }
-
-    function collideObstacles(obj){
-      obstacles.forEach(o=>{
-        if(obj.x+obj.r>o.x && obj.x-obj.r<o.x+o.w && obj.y+obj.r>o.y && obj.y-obj.r<o.y+o.h){
-          // push back
-          const left = obj.x - o.x; const right = (o.x+o.w) - obj.x; const top = obj.y - o.y; const bottom = (o.y+o.h) - obj.y;
-          const minPen = Math.min(left, right, top, bottom);
-          if(minPen===left) obj.x = o.x - obj.r;
-          else if(minPen===right) obj.x = o.x + o.w + obj.r;
-          else if(minPen===top) obj.y = o.y - obj.r;
-          else obj.y = o.y + o.h + obj.r;
-        }
-      });
-    }
-
-    function allyStep(){
-      const state = getState();
-      let actionIdx;
-      if(Math.random() < epsilon){
-        actionIdx = Math.floor(Math.random()*actions.length);
-        aiMode.textContent = 'Exploration';
-      } else {
-        aiMode.textContent = 'Exploitation';
-        const {o} = forward(state);
-        const probs = softmax(o);
-        actionIdx = probs.indexOf(Math.max(...probs));
-      }
-      applyAction(ally, actionIdx);
-      aiDecision.textContent = `KI möchte: ${actions[actionIdx]}`;
-      return {state, actionIdx};
-    }
-
-    function applyAction(entity, actionIdx){
-      const dirs = {
-        'up': [0,-1], 'down':[0,1], 'left':[-1,0], 'right':[1,0], 'idle':[0,0]
+    function createCell(name, x, y, mass, color, human=false){
+      return {
+        name, color, human,
+        pieces:[{x,y,mass,vx:0,vy:0,merge:0}],
+        target:{x:0,y:0},
+        splitCd:0,
+        ejectCd:0,
+        aiTimer:0,
       };
-      const [ax, ay] = dirs[actions[actionIdx]];
-      const len = Math.hypot(ax, ay)||1;
-      entity.vx = ax/len * entity.speed;
-      entity.vy = ay/len * entity.speed;
-      entity.x = clamp(entity.x + entity.vx*dt, entity.r, W-entity.r);
-      entity.y = clamp(entity.y + entity.vy*dt, entity.r, H-entity.r);
-      collideObstacles(entity);
     }
 
-    function updateEnemies(){
-      enemies.forEach(en=>{
-        en.x += Math.cos(en.dir)*en.speed*dt;
-        en.y += Math.sin(en.dir)*en.speed*dt;
-        if(en.x<en.r||en.x>W-en.r) en.dir = Math.PI - en.dir;
-        if(en.y<en.r||en.y>H-en.r) en.dir = -en.dir;
-        collideObstacles(en);
-      });
-    }
-
-    function handleCollisions(){
-      // player collect orbs
-      orbs = orbs.filter(o=>{
-        const dP = Math.hypot(o.x-player.x, o.y-player.y);
-        const dA = Math.hypot(o.x-ally.x, o.y-ally.y);
-        if(dP < player.r + o.r){ score += 10; spawnOrb(); return false; }
-        if(dA < ally.r + o.r){ allyScore += 6; spawnOrb(); return false; }
-        return true;
-      });
-      // enemies damage player
-      enemies.forEach(en=>{
-        const dP = Math.hypot(en.x-player.x, en.y-player.y);
-        if(dP < en.r + player.r){ hp = Math.max(0, hp-20*dt); }
-        const dA = Math.hypot(en.x-ally.x, en.y-ally.y);
-        if(dA < en.r + ally.r){ en.dir += Math.PI/2; }
-      });
-    }
-
-    function updateHUD(){
-      hpStat.textContent = hp.toFixed(0);
-      scoreStat.textContent = score.toFixed(0);
-      allyStat.textContent = allyScore.toFixed(0);
-      timeStat.textContent = timer.toFixed(1);
-      sampleCount.textContent = samples.length;
-      updateCount.textContent = updates;
-      epsilonVal.textContent = epsilon.toFixed(2);
-      lrVal.textContent = lr.toFixed(2);
-    }
-
-    function render(){
-      ctx.clearRect(0,0,W,H);
-      // background grid
-      ctx.fillStyle = '#0c1120';
-      ctx.fillRect(0,0,W,H);
-      ctx.strokeStyle = 'rgba(255,255,255,0.04)';
-      ctx.lineWidth = 1;
-      for(let x=0;x<W;x+=40){ ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,H); ctx.stroke(); }
-      for(let y=0;y<H;y+=40){ ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(W,y); ctx.stroke(); }
-
-      // obstacles
-      obstacles.forEach(o=>{
-        ctx.fillStyle = 'rgba(255,255,255,0.05)';
-        ctx.fillRect(o.x, o.y, o.w, o.h);
-        ctx.strokeStyle = 'rgba(255,255,255,0.1)';
-        ctx.strokeRect(o.x, o.y, o.w, o.h);
-      });
-
-      // orbs
-      orbs.forEach(o=>{
-        ctx.beginPath();
-        const grad = ctx.createRadialGradient(o.x, o.y, 2, o.x, o.y, 10);
-        grad.addColorStop(0, '#7cf0ff');
-        grad.addColorStop(1, '#2f9ecb');
-        ctx.fillStyle = grad;
-        ctx.arc(o.x,o.y,o.r,0,Math.PI*2);
-        ctx.fill();
-      });
-
-      // enemies
-      enemies.forEach(en=>{
-        ctx.beginPath();
-        const grad = ctx.createRadialGradient(en.x, en.y, 2, en.x, en.y, 14);
-        grad.addColorStop(0, '#ff6b6b');
-        grad.addColorStop(1, '#c0392b');
-        ctx.fillStyle = grad;
-        ctx.arc(en.x,en.y,en.r,0,Math.PI*2);
-        ctx.fill();
-        ctx.strokeStyle = 'rgba(0,0,0,0.4)';
-        ctx.stroke();
-      });
-
-      // ally trail
-      ctx.strokeStyle = 'rgba(124, 240, 255, 0.5)';
-      ctx.lineWidth = 2;
-      ctx.beginPath();
-      ctx.arc(ally.x, ally.y, ally.r+6, 0, Math.PI*2);
-      ctx.stroke();
-
-      // ally
-      ctx.beginPath();
-      ctx.fillStyle = '#7cf0ff';
-      ctx.arc(ally.x, ally.y, ally.r, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#0c1120';
-      ctx.fillRect(ally.x-2, ally.y-6, 4, 3);
-
-      // player
-      ctx.beginPath();
-      ctx.fillStyle = '#feca57';
-      ctx.arc(player.x, player.y, player.r, 0, Math.PI*2); ctx.fill();
-      ctx.fillStyle = '#0c1120';
-      ctx.fillRect(player.x-2, player.y-6, 4, 3);
-
-      // UI overlay text
-      ctx.fillStyle = 'rgba(255,255,255,0.7)';
-      ctx.font = '12px Inter';
-      ctx.fillText('WASD bewegen · Sammle Blau, meide Rot · KI lernt dein Verhalten', 12, 16);
-    }
-
-    // --- Chart ---
-    function drawChart(){
-      chartCtx.clearRect(0,0,chartCanvas.width, chartCanvas.height);
-      chartCtx.fillStyle = '#0d101c';
-      chartCtx.fillRect(0,0,chartCanvas.width, chartCanvas.height);
-      chartCtx.strokeStyle = 'rgba(255,255,255,0.1)';
-      for(let x=0;x<chartCanvas.width;x+=40){ chartCtx.beginPath(); chartCtx.moveTo(x,0); chartCtx.lineTo(x,chartCanvas.height); chartCtx.stroke(); }
-      for(let y=0;y<chartCanvas.height;y+=40){ chartCtx.beginPath(); chartCtx.moveTo(0,y); chartCtx.lineTo(chartCanvas.width,y); chartCtx.stroke(); }
-      if(episodeHistory.length<2) return;
-      const maxReward = Math.max(...episodeHistory.map(e=>e.reward), 1);
-      chartCtx.strokeStyle = '#7cf0ff';
-      chartCtx.lineWidth = 2;
-      chartCtx.beginPath();
-      episodeHistory.forEach((ep,idx)=>{
-        const x = (idx/(episodeHistory.length-1)) * (chartCanvas.width-20) + 10;
-        const y = chartCanvas.height - (ep.reward/maxReward)*(chartCanvas.height-20) - 10;
-        if(idx===0) chartCtx.moveTo(x,y); else chartCtx.lineTo(x,y);
-      });
-      chartCtx.stroke();
-      chartCtx.fillStyle = '#7cf0ff';
-      episodeHistory.forEach((ep,idx)=>{
-        const x = (idx/(episodeHistory.length-1)) * (chartCanvas.width-20) + 10;
-        const y = chartCanvas.height - (ep.reward/maxReward)*(chartCanvas.height-20) - 10;
-        chartCtx.beginPath(); chartCtx.arc(x,y,3,0,Math.PI*2); chartCtx.fill();
-      });
-    }
-
-    function renderEpisodes(){
-      episodeList.innerHTML = episodeHistory.slice(-6).map(ep=>
-        `<li>Ep ${ep.id}: Reward ${ep.reward.toFixed(1)} · Player ${ep.playerScore} · KI ${ep.allyScore}</li>`
-      ).join('');
-    }
-
-    // --- Training loop ---
-    function recordSample(state, actionIdx){
-      if(samples.length > maxSamples) samples.shift();
-      samples.push({state, actionIdx});
-    }
-
-    function trainMiniBatch(batchSize=12){
-      if(samples.length===0) return;
-      for(let i=0;i<batchSize;i++){
-        const sample = samples[Math.floor(Math.random()*samples.length)];
-        trainStep(sample.state, sample.actionIdx);
-      }
-      updateModelView();
-    }
-
-    function updateModelView(){
-      featCount.textContent = inputSize;
-      actCount.textContent = outputSize;
-      // visualize first hidden neuron weights
-      const names = [
-        'ally->player dx','ally->player dy','ally->orb dx','ally->orb dy','ally->enemy dx','ally->enemy dy','ally vx','ally vy','player vx','player vy'
-      ];
-      weightList.innerHTML = names.map((name, idx)=>{
-        const avg = W1.reduce((a,row)=>a+row[idx],0)/hiddenSize;
-        const width = clamp((avg+1)/2, 0, 1)*100;
-        const color = avg>0? 'linear-gradient(90deg,#7cf0ff,#6c5ce7)':'linear-gradient(90deg,#ff9ff3,#ff6b81)';
-        return `<li><div class="row" style="justify-content: space-between;"><span>${name}</span><span>${avg.toFixed(2)}</span></div><div class="bar"><span style="width:${width}%; background:${color}"></span></div></li>`;
-      }).join('');
-    }
-
-    function renderFeatures(){
-      return `
-        <li>State: [ally→player Δx/Δy, ally→orb Δx/Δy, ally→enemy Δx/Δy, ally vx/vy, player vx/vy]</li>
-        <li>Aktionen: ${actions.join(', ')}</li>
-        <li>Training: Cross-Entropy, ReLU Hidden ${hiddenSize}, Lernrate anpassbar</li>
-        <li>Online-Update: jede Sekunde Mini-Batch auf allen gesammelten Samples</li>
-      `;
-    }
-
-    // --- Episode management ---
-    function endEpisode(){
-      running = false;
-      const reward = allyScore - (100-hp)*0.2 + score*0.2;
-      episodeHistory.push({id: episode, reward, playerScore: score, allyScore});
-      drawChart();
-      renderEpisodes();
-      difficulty += 0.3;
-      episode++;
-      modeLabel.textContent = 'Episode beendet';
-      setTimeout(()=>{ resetEpisode(); }, 800);
-    }
-
-    function resetEpisode(){
-      initGame();
-      running = true;
-    }
-
-    // --- Controls ---
-    document.getElementById('resetModel').onclick = ()=>{ initModel(); };
-    document.getElementById('resetData').onclick = ()=>{ samples=[]; updates=0; episodeHistory=[]; drawChart(); renderEpisodes(); updateHUD(); };
-    document.getElementById('newRound').onclick = ()=>{ endEpisode(); };
-    lrSlider.oninput = ()=>{ lr = parseFloat(lrSlider.value); lrLabel.textContent = lr.toFixed(2); lrVal.textContent = lr.toFixed(2); };
-    epsSlider.oninput = ()=>{ epsilon = parseFloat(epsSlider.value); epsLabel.textContent = epsilon.toFixed(2); epsilonVal.textContent = epsilon.toFixed(2); };
-
-    // --- Main loop ---
-    let trainAccumulator = 0;
-    function loop(ts){
-      if(!lastTime) lastTime = ts;
-      dt = (ts-lastTime)/1000;
-      lastTime = ts;
-      if(running){
-        timer -= dt; if(timer<=0 || hp<=0) endEpisode();
-        const playerAct = playerAction();
-        const {state, actionIdx} = allyStep();
-        recordSample(state, playerAct); // target is player action for imitation
-        updateEnemies();
-        handleCollisions();
-        updateHUD();
-        trainAccumulator += dt;
-        if(trainAccumulator > 1){ // once per second run minibatch
-          trainMiniBatch();
-          trainAccumulator = 0;
-        }
-        aiDecision.textContent += ` | Spieler: ${actions[playerAct]}`;
-      }
-      render();
+    function resetGame(){
+      foods = Array.from({length:FOOD_COUNT}, ()=>({x:rand(30,WORLD-30), y:rand(30,WORLD-30), mass:1, color:`hsl(${rand(0,360)} 85% 65%)`}));
+      viruses = Array.from({length:VIRUS_COUNT}, ()=>({x:rand(100,WORLD-100),y:rand(100,WORLD-100),r:44}));
+      pellets = [];
+      player = createCell('You', WORLD/2, WORLD/2, 10, '#3b82f6', true);
+      bots = Array.from({length:BOT_COUNT}, (_,i)=>createCell(`Bot ${i+1}`, rand(100,WORLD-100), rand(100,WORLD-100), rand(9,24), `hsl(${rand(0,360)} 75% 60%)`));
+      over = false;
+      overlay.style.display = 'none';
+      last = performance.now();
       requestAnimationFrame(loop);
     }
 
-    // --- Start ---
-    initModel();
-    initGame();
-    updateModelView();
-    requestAnimationFrame(loop);
+    function getTotalMass(c){ return c.pieces.reduce((s,p)=>s+p.mass,0); }
+
+    function splitCell(cell){
+      if (cell.splitCd > 0 || cell.pieces.length >= 16) return;
+      let added = [];
+      for (const p of cell.pieces) {
+        if (p.mass < 18) continue;
+        p.mass *= 0.5;
+        const ang = Math.atan2(cell.target.y - p.y, cell.target.x - p.x);
+        added.push({x:p.x + Math.cos(ang)*radiusFromMass(p.mass), y:p.y + Math.sin(ang)*radiusFromMass(p.mass), mass:p.mass, vx:Math.cos(ang)*480, vy:Math.sin(ang)*480, merge:7});
+      }
+      cell.pieces.push(...added);
+      cell.splitCd = 1;
+    }
+
+    function ejectMass(cell){
+      if (cell.ejectCd > 0) return;
+      for (const p of cell.pieces) {
+        if (p.mass < 20) continue;
+        p.mass -= 0.7;
+        const ang = Math.atan2(cell.target.y - p.y, cell.target.x - p.x);
+        pellets.push({x:p.x + Math.cos(ang)*(radiusFromMass(p.mass)+8), y:p.y + Math.sin(ang)*(radiusFromMass(p.mass)+8), mass:0.7, vx:Math.cos(ang)*560, vy:Math.sin(ang)*560, life:5, color:'#f472b6'});
+      }
+      cell.ejectCd = 0.18;
+    }
+
+    function stepCell(cell, dt){
+      cell.splitCd = Math.max(0, cell.splitCd - dt);
+      cell.ejectCd = Math.max(0, cell.ejectCd - dt);
+      for (const p of cell.pieces) {
+        const r = radiusFromMass(p.mass);
+        const speed = 210 / Math.pow(p.mass, 0.33);
+        const ang = Math.atan2(cell.target.y - p.y, cell.target.x - p.x);
+        p.vx += Math.cos(ang) * speed * dt;
+        p.vy += Math.sin(ang) * speed * dt;
+        p.vx *= 0.90;
+        p.vy *= 0.90;
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.x = clamp(p.x, r, WORLD-r);
+        p.y = clamp(p.y, r, WORLD-r);
+        p.mass = Math.max(9, p.mass - dt*0.012);
+        p.merge = Math.max(0, p.merge-dt);
+      }
+      if (cell.pieces.length > 1) {
+        for (let i=0;i<cell.pieces.length;i++){
+          for (let j=i+1;j<cell.pieces.length;j++){
+            const a=cell.pieces[i], b=cell.pieces[j];
+            if (a.merge>0||b.merge>0) continue;
+            const d=dist(a,b), rr=radiusFromMass(a.mass)+radiusFromMass(b.mass);
+            if (d < rr*0.4){
+              a.mass += b.mass;
+              cell.pieces.splice(j,1); j--;
+            }
+          }
+        }
+      }
+    }
+
+    function stepBots(dt){
+      const targets=[...bots, player].flatMap(c=>c.pieces.map(p=>({owner:c,p})));
+      for (const bot of bots){
+        bot.aiTimer -= dt;
+        if (bot.aiTimer <= 0){
+          bot.aiTimer = rand(0.2, 0.5);
+          const main = bot.pieces[0];
+          if (!main) continue;
+          let bestT = null;
+          for (const t of targets){
+            if (t.owner===bot) continue;
+            const d=dist(main,t.p);
+            const canEat = main.mass > t.p.mass*1.22;
+            if (canEat && d<700 && (!bestT || d < bestT.d)) bestT = {x:t.p.x,y:t.p.y,d,mode:'hunt'};
+            const danger = t.p.mass > main.mass*1.22;
+            if (danger && d<420) { bestT = {x: main.x-(t.p.x-main.x), y: main.y-(t.p.y-main.y), d:0, mode:'flee'}; break; }
+          }
+          if (!bestT){
+            const f=foods[(Math.random()*foods.length)|0];
+            bestT = f ? {x:f.x,y:f.y,mode:'food'} : {x:rand(0,WORLD),y:rand(0,WORLD),mode:'wander'};
+          }
+          bot.target = bestT;
+          const total = getTotalMass(bot);
+          if (bot.target.mode==='hunt' && total>34 && Math.random()<0.25) splitCell(bot);
+          if (total>26 && Math.random()<0.12) ejectMass(bot);
+        }
+        stepCell(bot, dt);
+      }
+    }
+
+    function eatPhase(){
+      const actors = [player, ...bots].filter(c=>c.pieces.length);
+      for (const c of actors){
+        for (const p of c.pieces){
+          const pr = radiusFromMass(p.mass);
+          for (let i=foods.length-1;i>=0;i--){
+            const f=foods[i];
+            if (Math.hypot(p.x-f.x,p.y-f.y) < pr){ p.mass += f.mass; foods.splice(i,1); foods.push({x:rand(30,WORLD-30), y:rand(30,WORLD-30), mass:1, color:`hsl(${rand(0,360)} 85% 65%)`}); }
+          }
+          for (let i=pellets.length-1;i>=0;i--){
+            const e=pellets[i];
+            if (Math.hypot(p.x-e.x,p.y-e.y) < pr){ p.mass += e.mass; pellets.splice(i,1); }
+          }
+        }
+      }
+      for (let i=0;i<actors.length;i++){
+        for (let j=0;j<actors.length;j++){
+          if (i===j) continue;
+          const A=actors[i], B=actors[j];
+          for (const a of A.pieces){
+            for (let bi=B.pieces.length-1; bi>=0; bi--){
+              const b=B.pieces[bi];
+              const d=dist(a,b);
+              if (a.mass > b.mass*1.15 && d < radiusFromMass(a.mass)-radiusFromMass(b.mass)*0.35){
+                a.mass += b.mass*0.95;
+                B.pieces.splice(bi,1);
+              }
+            }
+          }
+        }
+      }
+
+      for (const c of [player,...bots]){
+        for (let i=c.pieces.length-1;i>=0;i--){
+          const p=c.pieces[i];
+          for (const v of viruses){
+            if (dist(p,v) < radiusFromMass(p.mass)+v.r*0.72 && p.mass > 42 && c.pieces.length < 16){
+              const count = Math.min(8, 16-c.pieces.length);
+              const part = p.mass/(count+1);
+              p.mass = part;
+              for (let k=0;k<count;k++){
+                const a=Math.PI*2*(k/count)+rand(-0.2,0.2);
+                c.pieces.push({x:p.x+Math.cos(a)*20,y:p.y+Math.sin(a)*20,mass:part,vx:Math.cos(a)*420,vy:Math.sin(a)*420,merge:9});
+              }
+              break;
+            }
+          }
+        }
+      }
+    }
+
+    function stepPellets(dt){
+      for (let i=pellets.length-1;i>=0;i--){
+        const p=pellets[i];
+        p.x += p.vx*dt; p.y += p.vy*dt;
+        p.vx *= 0.94; p.vy *= 0.94;
+        p.life -= dt;
+        p.x = clamp(p.x,4,WORLD-4); p.y = clamp(p.y,4,WORLD-4);
+        if (p.life <= 0) pellets.splice(i,1);
+      }
+    }
+
+    function updatePlayerTarget(){
+      const main = player.pieces[0];
+      if (!main) return;
+      const mag = Math.hypot(stick.dx, stick.dy);
+      if (mag < 0.001){ player.target.x = main.x; player.target.y = main.y; return; }
+      player.target.x = main.x + stick.dx * 500;
+      player.target.y = main.y + stick.dy * 500;
+    }
+
+    function computeCamera(){
+      if (!player.pieces.length) return;
+      let cx=0,cy=0,tm=0;
+      for (const p of player.pieces){ cx += p.x*p.mass; cy += p.y*p.mass; tm += p.mass; }
+      cam.x = cx/tm; cam.y = cy/tm;
+      const m = getTotalMass(player);
+      cam.zoom = clamp(1.4 - Math.log10(m+1)*0.35, 0.34, 1.25);
+    }
+
+    function renderGrid(){
+      const step = 60;
+      const z = cam.zoom;
+      const startX = (-cam.x*z + canvas.width/2) % (step*z);
+      const startY = (-cam.y*z + canvas.height/2) % (step*z);
+      ctx.strokeStyle = '#d4e0f8';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      for (let x=startX; x<canvas.width; x += step*z){ ctx.moveTo(x,0); ctx.lineTo(x,canvas.height); }
+      for (let y=startY; y<canvas.height; y += step*z){ ctx.moveTo(0,y); ctx.lineTo(canvas.width,y); }
+      ctx.stroke();
+    }
+
+    function toScreen(x,y){ return {x:(x-cam.x)*cam.zoom + canvas.width/2, y:(y-cam.y)*cam.zoom + canvas.height/2}; }
+
+    function draw(){
+      ctx.clearRect(0,0,canvas.width,canvas.height);
+      renderGrid();
+      const bounds = [{x:0,y:0},{x:WORLD,y:0},{x:WORLD,y:WORLD},{x:0,y:WORLD}].map(p=>toScreen(p.x,p.y));
+      ctx.strokeStyle = '#93b4ea'; ctx.lineWidth = 4; ctx.beginPath();
+      ctx.moveTo(bounds[0].x,bounds[0].y);
+      for(let i=1;i<bounds.length;i++) ctx.lineTo(bounds[i].x,bounds[i].y);
+      ctx.closePath(); ctx.stroke();
+
+      for (const f of foods){ const s=toScreen(f.x,f.y); ctx.fillStyle=f.color; ctx.beginPath(); ctx.arc(s.x,s.y,3.2*cam.zoom,0,Math.PI*2); ctx.fill(); }
+      for (const v of viruses){
+        const s=toScreen(v.x,v.y), r=v.r*cam.zoom;
+        ctx.fillStyle='#22c55e'; ctx.strokeStyle='#15803d'; ctx.lineWidth=2;
+        ctx.beginPath();
+        for(let i=0;i<24;i++){
+          const a=Math.PI*2*i/24;
+          const rr=r*(i%2?0.88:1.06);
+          const x=s.x+Math.cos(a)*rr, y=s.y+Math.sin(a)*rr;
+          if(i===0) ctx.moveTo(x,y); else ctx.lineTo(x,y);
+        }
+        ctx.closePath(); ctx.fill(); ctx.stroke();
+      }
+      for (const e of pellets){ const s=toScreen(e.x,e.y); ctx.fillStyle=e.color; ctx.beginPath(); ctx.arc(s.x,s.y,4*cam.zoom,0,Math.PI*2); ctx.fill(); }
+
+      const all=[...bots, player];
+      all.sort((a,b)=>getTotalMass(a)-getTotalMass(b));
+      for (const c of all){
+        for (const p of c.pieces){
+          const s=toScreen(p.x,p.y), r=radiusFromMass(p.mass)*cam.zoom;
+          const g=ctx.createRadialGradient(s.x-r*0.35,s.y-r*0.35,r*0.2,s.x,s.y,r);
+          g.addColorStop(0,'#ffffff99'); g.addColorStop(1,c.color);
+          ctx.fillStyle=g; ctx.beginPath(); ctx.arc(s.x,s.y,r,0,Math.PI*2); ctx.fill();
+          if (r > 14){
+            ctx.fillStyle='white'; ctx.textAlign='center';
+            ctx.font=`${Math.max(11, r*0.24)}px Inter, sans-serif`;
+            ctx.fillText(c.name, s.x, s.y-r*0.03);
+            ctx.font=`${Math.max(10, r*0.2)}px Inter, sans-serif`;
+            ctx.fillText(Math.floor(p.mass), s.x, s.y+r*0.28);
+          }
+        }
+      }
+    }
+
+    function ui(){
+      const pm = getTotalMass(player);
+      massEl.textContent = Math.floor(pm);
+      if (pm > best) { best = pm; localStorage.setItem('cellarena_best', best.toFixed(1)); bestEl.textContent = Math.floor(best); }
+      const ranking = [player, ...bots].map(c=>({name:c.name, mass:getTotalMass(c)})).sort((a,b)=>b.mass-a.mass);
+      const rank = ranking.findIndex(r=>r.name==='You')+1;
+      rankEl.textContent = rank ? `${rank}/${ranking.length}` : '-';
+      boardEl.innerHTML = ranking.slice(0,8).map(r=>`<li>${r.name} — ${Math.floor(r.mass)}</li>`).join('');
+    }
+
+    function loop(ts){
+      if (over) return;
+      const dt = Math.min(0.033, (ts-last)/1000); last = ts;
+      updatePlayerTarget();
+      stepCell(player, dt);
+      stepBots(dt);
+      stepPellets(dt);
+      eatPhase();
+      computeCamera();
+      draw();
+      ui();
+      bots = bots.filter(b=>b.pieces.length);
+      if (!player.pieces.length){
+        over = true;
+        finalEl.textContent = `You were absorbed. Best mass this run: ${Math.floor(best)}.`;
+        overlay.style.display = 'flex';
+        return;
+      }
+      if (bots.length < BOT_COUNT){
+        bots.push(createCell(`Bot ${Math.floor(rand(50,999))}`, rand(80,WORLD-80), rand(80,WORLD-80), rand(9,18), `hsl(${rand(0,360)} 72% 60%)`));
+      }
+      requestAnimationFrame(loop);
+    }
+
+    function size(){
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      canvas.width = Math.floor(innerWidth*dpr);
+      canvas.height = Math.floor(innerHeight*dpr);
+      ctx.setTransform(dpr,0,0,dpr,0,0);
+    }
+    addEventListener('resize', size, {passive:true});
+    size();
+
+    function normStick(clientX, clientY){
+      const r = stickEl.getBoundingClientRect();
+      stick.cx = r.left + r.width/2; stick.cy = r.top + r.height/2;
+      const max = r.width*0.35;
+      let dx = clientX-stick.cx, dy = clientY-stick.cy;
+      const len = Math.hypot(dx,dy);
+      if (len>max){ dx*=max/len; dy*=max/len; }
+      stick.dx = dx/max; stick.dy = dy/max;
+      knob.style.transform = `translate(calc(-50% + ${dx}px), calc(-50% + ${dy}px))`;
+    }
+
+    stickEl.addEventListener('pointerdown', e=>{ stick.active=true; stick.id=e.pointerId; stickEl.setPointerCapture(e.pointerId); normStick(e.clientX,e.clientY); });
+    stickEl.addEventListener('pointermove', e=>{ if(!stick.active||e.pointerId!==stick.id) return; normStick(e.clientX,e.clientY); });
+    const endStick = e=>{ if(!stick.active||e.pointerId!==stick.id) return; stick.active=false; stick.dx=0; stick.dy=0; knob.style.transform='translate(-50%,-50%)'; };
+    stickEl.addEventListener('pointerup', endStick);
+    stickEl.addEventListener('pointercancel', endStick);
+
+    document.getElementById('splitBtn').addEventListener('click', ()=>splitCell(player));
+    document.getElementById('ejectBtn').addEventListener('click', ()=>ejectMass(player));
+    document.getElementById('restartBtn').addEventListener('click', resetGame);
+
+    addEventListener('keydown', e=>{
+      if (e.code==='Space') splitCell(player);
+      if (e.code==='KeyW') ejectMass(player);
+    });
+
+    resetGame();
   </script>
 </body>
 </html>
